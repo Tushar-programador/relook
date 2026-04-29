@@ -9,6 +9,7 @@ export function AuthPage({ mode }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, register } = useAuth();
+  const redirectTarget = location.state?.from;
   const [form, setForm] = useState({ email: "", password: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -66,7 +67,7 @@ export function AuthPage({ mode }) {
 
         {mode === "login" && (
           <div className="mt-3 text-sm">
-            <Link to="/forgot-password" className="font-semibold text-primary">
+            <Link to="/forgot-password" state={redirectTarget ? { from: redirectTarget } : undefined} className="font-semibold text-primary">
               Forgot password?
             </Link>
           </div>
@@ -74,7 +75,11 @@ export function AuthPage({ mode }) {
 
         <p className="mt-6 text-sm text-slate-600">
           {mode === "login" ? "Need an account?" : "Already have an account?"}{" "}
-          <Link to={mode === "login" ? "/register" : "/login"} className="font-semibold text-primary">
+          <Link
+            to={mode === "login" ? "/register" : "/login"}
+            state={redirectTarget ? { from: redirectTarget } : undefined}
+            className="font-semibold text-primary"
+          >
             {mode === "login" ? "Register" : "Log in"}
           </Link>
         </p>

@@ -29,13 +29,18 @@ export function ProjectPage() {
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
   const isMounted = useRef(true);
+  const hasLoadedOnce = useRef(false);
+  const requestIdRef = useRef(0);
 
   const loadProjectData = useCallback(async () => {
+    const requestId = requestIdRef.current + 1;
+    requestIdRef.current = requestId;
+
     try {
       setActionError("");
       setError("");
 
-      if (loading) {
+      if (!hasLoadedOnce.current) {
         setLoading(true);
       } else {
         setRefreshing(true);
@@ -48,32 +53,33 @@ export function ProjectPage() {
         filter === "all" ? {} : { status: filter }
       );
 
-      if (!isMounted.current) {
+      if (!isMounted.current || requestIdRef.current !== requestId) {
         return;
       }
 
       setAnalytics(analyticsData);
       setFeedback(Array.isArray(feedbackData?.items) ? feedbackData.items : []);
     } catch (err) {
-      if (!isMounted.current) {
+      if (!isMounted.current || requestIdRef.current !== requestId) {
         return;
       }
 
       setFeedback([]);
       setError(err.message);
     } finally {
-      if (!isMounted.current) {
+      if (!isMounted.current || requestIdRef.current !== requestId) {
         return;
       }
 
+      hasLoadedOnce.current = true;
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filter, loading, projectId]);
+  }, [filter, projectId]);
 
   useEffect(() => {
     loadProjectData();
-  }, [projectId, filter]);
+  }, [loadProjectData]);
 
   useEffect(() => {
     return () => {
@@ -117,7 +123,7 @@ export function ProjectPage() {
     <AppShell>
       <div className="space-y-6">
         <div>
-          <Button type="button" variant="ghost" className="gap-2" onClick={() => navigate("/dashboard")}> 
+          <Button type="button" variant="ghost" className="gap-2" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="h-4 w-4" />
             Back to dashboard
           </Button>

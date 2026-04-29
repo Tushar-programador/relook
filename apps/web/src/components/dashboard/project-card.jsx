@@ -1,12 +1,19 @@
-import { ArrowRight, Copy, ExternalLink } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { getEmbedCode } from "../../lib/utils";
 import { Card, CardDescription, CardTitle } from "../ui/card.jsx";
 import { Button } from "../ui/button.jsx";
 
 export function ProjectCard({ project }) {
+  const portalLink = `${window.location.origin}/feedback/${project.slug}`;
+  const whatsappShareLink = `https://wa.me/?text=${encodeURIComponent(`Share your feedback here: ${portalLink}`)}`;
+
   async function copyEmbed() {
     await navigator.clipboard.writeText(getEmbedCode(project.slug));
+  }
+
+  async function copyPortalLink() {
+    await navigator.clipboard.writeText(portalLink);
   }
 
   return (
@@ -35,6 +42,16 @@ export function ProjectCard({ project }) {
       </div>
 
       <div className="flex flex-wrap gap-3">
+        <Button variant="secondary" className="gap-2" onClick={copyPortalLink}>
+          <Copy className="h-4 w-4" />
+          Copy portal link
+        </Button>
+        <Button variant="secondary" asChild className="gap-2">
+          <a href={whatsappShareLink} target="_blank" rel="noreferrer">
+            <MessageCircle className="h-4 w-4" />
+            Share on WhatsApp
+          </a>
+        </Button>
         <Button variant="secondary" className="gap-2" onClick={copyEmbed}>
           <Copy className="h-4 w-4" />
           Copy widget embed
