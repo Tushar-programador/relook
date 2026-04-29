@@ -1,7 +1,10 @@
+import { fileURLToPath } from "url";
+import { resolve, dirname } from "path";
 import dotenv from "dotenv";
 import { z } from "zod";
 
-dotenv.config();
+const __dirname = dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: resolve(__dirname, "../../../../.env") });
 
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -17,13 +20,9 @@ const envSchema = z.object({
   SMTP_PASS: z.string().optional(),
   SMTP_FROM_EMAIL: z.string().optional(),
   SMTP_FROM_NAME: z.string().optional(),
-  AWS_REGION: z.string().default("auto"),
-  STORAGE_ENDPOINT: z.string().url().optional(),
-  STORAGE_BUCKET: z.string().optional(),
-  STORAGE_ACCESS_KEY_ID: z.string().optional(),
-  STORAGE_SECRET_ACCESS_KEY: z.string().optional(),
-  STORAGE_PUBLIC_URL: z.string().url().optional(),
-  SIGNED_URL_EXPIRES_SECONDS: z.coerce.number().default(900)
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional()
 });
 
 const parsed = envSchema.safeParse(process.env);

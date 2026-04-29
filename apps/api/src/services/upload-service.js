@@ -1,49 +1,51 @@
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { v2 as cloudinary } from "cloudinary";
 import { env } from "../config/env.js";
 import { ApiError } from "../utils/api-error.js";
 
-let s3Client;
-
-function getS3Client() {
-  if (s3Client) {
-    return s3Client;
+function getCloudinary() {
+  if (!env.CLOUDINARY_CLOUD_NAME || !env.CLOUDINARY_API_KEY || !env.CLOUDINARY_API_SECRET) {
+    throw new ApiError(500, "Cloudinary configuration is incomplete");
   }
 
-  if (!env.STORAGE_ENDPOINT || !env.STORAGE_BUCKET || !env.STORAGE_ACCESS_KEY_ID || !env.STORAGE_SECRET_ACCESS_KEY) {
-    throw new ApiError(500, "Storage configuration is incomplete");
-  }
-
-  s3Client = new S3Client({
-    region: env.AWS_REGION,
-    endpoint: env.STORAGE_ENDPOINT,
-    forcePathStyle: false,
-    credentials: {
-      accessKeyId: env.STORAGE_ACCESS_KEY_ID,
-      secretAccessKey: env.STORAGE_SECRET_ACCESS_KEY
-    }
+  cloudinary.config({
+    cloud_name: env.CLOUDINARY_CLOUD_NAME,
+    api_key: env.CLOUDINARY_API_KEY,
+    api_secret: env.CLOUDINARY_API_SECRET,
+    secure: true
   });
 
-  return s3Client;
+  return cloudinary;
 }
 
-export async function createSignedUploadUrl({ fileName, contentType, projectSlug }) {
-  const safeFileName = fileName.replace(/[^a-zA-Z0-9._-]/g, "-");
-  const objectKey = `${projectSlug}/${Date.now()}-${safeFileName}`;
+/**
+ * Generate signed upload parameters for direct client-side upload to Cloudinary.
+ * Videos get an eager transformation for CDN-optimised, compressed delivery.
+ */
+export function createSignedUploadParams({ contentType, projectSlug }) {
+  const instance = getCloudinary();
+  const isVideo = contentType.startsWith("video/");
+  const timestamp = Math.round(Date.now() / 1000);
+  const folder = `feedspace/${projectSlug}`;
 
-  const command = new PutObjectCommand({
-    Bucket: env.STORAGE_BUCKET,
-    Key: objectKey,
-    ContentType: contentType
-  });
+  const paramsToSign = { folder, timestamp };
 
-  const uploadUrl = await getSignedUrl(getS3Client(), command, {
-    expiresIn: env.SIGNED_URL_EXPIRES_SECONDS
-  });
+  // Eager transformation: auto quality + format, convert to mp4 for video
+  if (isVideo) {
+    paramsToSign.eager = "q_auto:low,f_mp4,vc_h264";
+    paramsToSign.eager_async = "true";
+    paramsToSign.resource_type = "video";
+  }
+
+  const signature = instance.utils.api_sign_request(paramsToSign, env.CLOUDINARY_API_SECRET);
+  const resourceType = isVideo ? "video" : "image";
 
   return {
-    uploadUrl,
-    objectKey,
-    publicUrl: env.STORAGE_PUBLIC_URL ? `${env.STORAGE_PUBLIC_URL}/${objectKey}` : null
+    uploadUrl: `https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
+    signature,
+    timestamp,
+    apiKey: env.CLOUDINARY_API_KEY,
+    cloudName: env.CLOUDINARY_CLOUD_NAME,
+    folder,
+    ...(isVideo ? { eager: "q_auto:low,f_mp4,vc_h264", eager_async: "true" } : {})
   };
 }

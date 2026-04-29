@@ -9,11 +9,19 @@ import { Input } from "../components/ui/input.jsx";
 import { Textarea } from "../components/ui/textarea.jsx";
 import { api } from "../lib/api";
 
-async function uploadFileWithProgress(uploadUrl, file, setProgress) {
-  await new Promise((resolve, reject) => {
+async function uploadToCloudinary(uploadParams, file, setProgress) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("api_key", uploadParams.apiKey);
+  formData.append("timestamp", String(uploadParams.timestamp));
+  formData.append("signature", uploadParams.signature);
+  formData.append("folder", uploadParams.folder);
+  if (uploadParams.eager) formData.append("eager", uploadParams.eager);
+  if (uploadParams.eager_async) formData.append("eager_async", uploadParams.eager_async);
+
+  return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("PUT", uploadUrl);
-    xhr.setRequestHeader("Content-Type", file.type);
+    xhr.open("POST", uploadParams.uploadUrl);
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -23,14 +31,14 @@ async function uploadFileWithProgress(uploadUrl, file, setProgress) {
 
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) {
-        resolve();
+        resolve(JSON.parse(xhr.responseText));
       } else {
         reject(new Error("Upload failed"));
       }
     };
 
     xhr.onerror = () => reject(new Error("Upload failed"));
-    xhr.send(file);
+    xhr.send(formData);
   });
 }
 
@@ -76,12 +84,11 @@ export function PublicFeedbackPage() {
 
         const signed = await api.signPublicUpload({
           slug,
-          fileName: file.name,
           contentType: file.type
         });
 
-        await uploadFileWithProgress(signed.uploadUrl, file, setProgress);
-        mediaUrl = signed.publicUrl || `${signed.objectKey}`;
+        const uploaded = await uploadToCloudinary(signed, file, setProgress);
+        mediaUrl = uploaded.secure_url;
       }
 
       await api.submitFeedback(slug, {
