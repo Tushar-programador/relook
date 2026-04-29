@@ -21,11 +21,11 @@ export function AuthPage({ mode }) {
     try {
       if (mode === "login") {
         await login(form);
+        navigate(location.state?.from?.pathname || "/dashboard", { replace: true });
       } else {
         await register(form);
+        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, { replace: true });
       }
-
-      navigate(location.state?.from?.pathname || "/dashboard", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -64,12 +64,29 @@ export function AuthPage({ mode }) {
           </Button>
         </form>
 
+        {mode === "login" && (
+          <div className="mt-3 text-sm">
+            <Link to="/forgot-password" className="font-semibold text-primary">
+              Forgot password?
+            </Link>
+          </div>
+        )}
+
         <p className="mt-6 text-sm text-slate-600">
           {mode === "login" ? "Need an account?" : "Already have an account?"}{" "}
           <Link to={mode === "login" ? "/register" : "/login"} className="font-semibold text-primary">
             {mode === "login" ? "Register" : "Log in"}
           </Link>
         </p>
+
+        {mode === "register" && (
+          <p className="mt-3 text-sm text-slate-600">
+            Signed up but not verified?{" "}
+            <Link to="/verify-email" className="font-semibold text-primary">
+              Verify email
+            </Link>
+          </p>
+        )}
       </Card>
     </div>
   );

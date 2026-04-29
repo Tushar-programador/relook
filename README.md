@@ -19,6 +19,8 @@ apps/
 ## Features implemented
 
 - JWT auth with register, login, and current user endpoints
+- OTP email verification flow and resend verification endpoint
+- Forgot-password OTP flow with reset-password endpoint
 - Multi-project dashboard with unique slug generation
 - Public feedback collection for text, audio, and video
 - Browser recording support via MediaRecorder
@@ -38,6 +40,10 @@ apps/
 
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `POST /api/auth/verify-email`
+- `POST /api/auth/resend-verification`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
 - `GET /api/auth/me`
 - `POST /api/projects`
 - `GET /api/projects`
@@ -49,3 +55,9 @@ apps/
 - `GET /api/public/:slug/feedback`
 - `POST /api/uploads/public/sign`
 - `POST /api/uploads/sign`
+
+## Email delivery notes
+
+- OTP emails are sent via Nodemailer.
+- Configure SMTP variables in `.env` (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM_EMAIL`).
+- If SMTP is not configured, the API logs OTP values in server logs for local development only.

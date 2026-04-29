@@ -60,6 +60,39 @@ const faqs = [
   }
 ];
 
+const trustSignals = [
+  {
+    title: "Secure by design",
+    description: "JWT auth, route-level validation, and OTP-based account recovery are built into the platform architecture."
+  },
+  {
+    title: "Performance minded",
+    description: "Direct signed uploads keep heavy media away from app servers and reduce bottlenecks under load."
+  },
+  {
+    title: "Moderation guardrails",
+    description: "Only approved testimonials are exposed through public endpoints and embeddable widgets."
+  }
+];
+
+const customerProof = [
+  {
+    quote: "We moved from random Instagram DMs to one reliable testimonial inbox in a week.",
+    author: "Aditi S.",
+    role: "Founder, D2C Beauty Brand"
+  },
+  {
+    quote: "The approval pipeline gave us confidence to show video testimonials on paid landing pages.",
+    author: "Rahul M.",
+    role: "Performance Marketer"
+  },
+  {
+    quote: "Clients finally have one place for capture, review, and embed. It cut agency handoff friction hard.",
+    author: "Nikita G.",
+    role: "Agency Partner"
+  }
+];
+
 export function HomePage() {
   return (
     <SiteShell>
@@ -164,6 +197,35 @@ export function HomePage() {
                 <div key={item.question} className="rounded-3xl bg-white/75 p-5">
                   <h3 className="text-lg font-semibold">{item.question}</h3>
                   <p className="mt-2 text-sm text-slate-600">{item.answer}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[1fr_1fr]">
+          <Card>
+            <CardDescription className="uppercase tracking-[0.24em]">Trust signals</CardDescription>
+            <CardTitle className="mt-4">Built with production safeguards, not just pretty UI blocks.</CardTitle>
+            <div className="mt-5 space-y-4">
+              {trustSignals.map((signal) => (
+                <div key={signal.title} className="rounded-3xl bg-white/80 p-5">
+                  <h3 className="text-lg font-semibold">{signal.title}</h3>
+                  <p className="mt-2 text-sm text-slate-600">{signal.description}</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <CardDescription className="uppercase tracking-[0.24em]">What users say</CardDescription>
+            <CardTitle className="mt-4">Social proof from early teams using FeedSpace workflows.</CardTitle>
+            <div className="mt-5 space-y-4">
+              {customerProof.map((item) => (
+                <div key={item.author} className="rounded-3xl bg-white/80 p-5">
+                  <p className="text-sm text-slate-700">"{item.quote}"</p>
+                  <p className="mt-3 text-sm font-semibold">{item.author}</p>
+                  <p className="text-xs text-slate-500">{item.role}</p>
                 </div>
               ))}
             </div>

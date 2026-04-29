@@ -7,10 +7,12 @@ import { DashboardPage } from "./pages/dashboard-page.jsx";
 import { FeaturesPage } from "./pages/features-page.jsx";
 import { HomePage } from "./pages/home-page.jsx";
 import { ContactPage } from "./pages/contact-page.jsx";
+import { ForgotPasswordPage } from "./pages/forgot-password-page.jsx";
 import { NotFoundPage } from "./pages/not-found-page.jsx";
 import { PricingPage } from "./pages/pricing-page.jsx";
 import { ProjectPage } from "./pages/project-page.jsx";
 import { PublicFeedbackPage } from "./pages/public-feedback-page.jsx";
+import { VerifyEmailPage } from "./pages/verify-email-page.jsx";
 import { WidgetPage } from "./pages/widget-page.jsx";
 
 function ProtectedRoute({ children }) {
@@ -42,6 +44,8 @@ export default function App() {
       <Route path="/contact" element={<ContactPage />} />
       <Route path="/login" element={<AuthPage mode="login" />} />
       <Route path="/register" element={<AuthPage mode="register" />} />
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route
         path="/dashboard"
         element={

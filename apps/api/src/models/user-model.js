@@ -1,5 +1,26 @@
 import mongoose from "mongoose";
 
+const otpSchema = new mongoose.Schema(
+  {
+    codeHash: {
+      type: String,
+      default: ""
+    },
+    expiresAt: {
+      type: Date,
+      default: null
+    },
+    purpose: {
+      type: String,
+      enum: ["email-verification", "password-reset", ""],
+      default: ""
+    }
+  },
+  {
+    _id: false
+  }
+);
+
 const userSchema = new mongoose.Schema(
   {
     email: {
@@ -17,6 +38,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       enum: ["free", "pro", "business"],
       default: "free"
+    },
+    isEmailVerified: {
+      type: Boolean,
+      default: false
+    },
+    otp: {
+      type: otpSchema,
+      default: () => ({})
     }
   },
   {

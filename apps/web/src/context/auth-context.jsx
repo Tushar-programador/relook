@@ -36,8 +36,7 @@ export function AuthProvider({ children }) {
       },
       async register(credentials) {
         const data = await api.register(credentials);
-        localStorage.setItem("feedspace-token", data.token);
-        setUser(data.user);
+        return data;
       },
       logout() {
         localStorage.removeItem("feedspace-token");
