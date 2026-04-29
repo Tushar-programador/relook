@@ -4,6 +4,7 @@ export function useMediaRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
+  const [liveStream, setLiveStream] = useState(null);
   const [status, setStatus] = useState("idle");
   const [blob, setBlob] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
@@ -17,6 +18,7 @@ export function useMediaRecorder() {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+      setLiveStream(null);
     };
   }, [previewUrl]);
 
@@ -35,6 +37,7 @@ export function useMediaRecorder() {
       });
 
       streamRef.current = stream;
+      setLiveStream(stream);
       chunksRef.current = [];
 
       const mediaRecorder = new MediaRecorder(stream);
@@ -57,12 +60,14 @@ export function useMediaRecorder() {
 
         stream.getTracks().forEach((track) => track.stop());
         streamRef.current = null;
+        setLiveStream(null);
       };
 
       mediaRecorder.start();
       setStatus("recording");
     } catch (err) {
       setError(err.message || "Unable to start recording");
+      setLiveStream(null);
       setStatus("idle");
     }
   }
@@ -74,9 +79,14 @@ export function useMediaRecorder() {
   }
 
   function reset() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
     if (previewUrl) {
       URL.revokeObjectURL(previewUrl);
     }
+    setLiveStream(null);
     setPreviewUrl("");
     setBlob(null);
     setError("");
@@ -85,6 +95,7 @@ export function useMediaRecorder() {
 
   return {
     status,
+    liveStream,
     blob,
     previewUrl,
     error,

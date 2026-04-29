@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, UploadCloud } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { ArrowRight, CheckCircle2, Sparkles, UploadCloud } from "lucide-react";
+import { Link, useParams } from "react-router-dom";
 import { MediaRecorderPanel } from "../components/feedback/media-recorder.jsx";
 import { Badge } from "../components/ui/badge.jsx";
 import { Button } from "../components/ui/button.jsx";
@@ -61,9 +61,16 @@ export function PublicFeedbackPage() {
       .catch((err) => setError(err.message));
   }, [slug]);
 
+  useEffect(() => {
+    setSelectedFile(null);
+    setRecordedFile(null);
+    setProgress(0);
+  }, [type]);
+
   function handleRecordedBlob(blob, mimeType) {
     const extension = mimeType.includes("video") ? "webm" : "webm";
-    setRecordedFile(new File([blob], `testimonial-${Date.now()}.${extension}`, { type: mimeType }));
+    const fileName = mimeType.includes("video") ? `recorded-video.${extension}` : `recorded-audio.${extension}`;
+    setRecordedFile(new File([blob], fileName, { type: mimeType }));
     setSelectedFile(null);
   }
 
@@ -91,13 +98,15 @@ export function PublicFeedbackPage() {
         mediaUrl = uploaded.secure_url;
       }
 
-      await api.submitFeedback(slug, {
+      const payload = {
         type,
-        name: form.name,
-        email: form.email,
-        message: form.message,
-        mediaUrl
-      });
+        ...(form.name.trim() ? { name: form.name.trim() } : {}),
+        ...(form.email.trim() ? { email: form.email.trim() } : {}),
+        ...(form.message.trim() ? { message: form.message.trim() } : {}),
+        ...(mediaUrl ? { mediaUrl } : {})
+      };
+
+      await api.submitFeedback(slug, payload);
 
       setForm({ name: "", email: "", message: "" });
       setSelectedFile(null);
@@ -112,6 +121,12 @@ export function PublicFeedbackPage() {
   }
 
   const project = pageData?.project;
+  const hasSubmitted = Boolean(statusMessage);
+
+  function handleSubmitAnother() {
+    setStatusMessage("");
+    setError("");
+  }
 
   return (
     <div className="min-h-screen px-4 py-8 md:px-8">
@@ -135,6 +150,53 @@ export function PublicFeedbackPage() {
 
         <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <Card>
+            {hasSubmitted ? (
+              <div className="space-y-6">
+                <div className="rounded-[28px] border border-emerald-200 bg-emerald-50 p-6 text-center">
+                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100">
+                    <CheckCircle2 className="h-7 w-7 text-emerald-700" />
+                  </div>
+                  <h3 className="text-2xl font-semibold text-emerald-900">Thank you for your feedback</h3>
+                  <p className="mt-2 text-sm text-emerald-800">
+                    Your testimonial is safely received and now pending moderator review.
+                  </p>
+                </div>
+
+                <div className="rounded-[28px] border border-border bg-gradient-to-br from-white via-amber-50/40 to-teal-50/50 p-6">
+                  <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-slate-700 ring-1 ring-slate-200">
+                    <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                    Build Your Own Feedback Funnel
+                  </div>
+
+                  <h4 className="text-xl font-semibold text-slate-900">
+                    Want more testimonials like this for your brand?
+                  </h4>
+                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                    FeedSpace helps teams collect text, audio, and video testimonials with one branded link,
+                    then publish approved feedback across websites, landing pages, and social proof widgets.
+                  </p>
+
+                  <div className="mt-5 grid gap-3 text-sm text-slate-700 sm:grid-cols-2">
+                    <p className="rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-slate-200">One link for text, voice, and video</p>
+                    <p className="rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-slate-200">Review and approve before publishing</p>
+                    <p className="rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-slate-200">Cloud media storage with fast delivery</p>
+                    <p className="rounded-2xl bg-white/80 px-4 py-3 ring-1 ring-slate-200">Embed testimonials anywhere</p>
+                  </div>
+
+                  <div className="mt-6 flex flex-wrap gap-3">
+                    <Button type="button" onClick={handleSubmitAnother} variant="secondary">
+                      Submit another feedback
+                    </Button>
+                    <Button asChild>
+                      <Link to="/" className="inline-flex items-center gap-2">
+                        Explore FeedSpace
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
             <form className="space-y-5" onSubmit={handleSubmit}>
               <div className="flex flex-wrap gap-2">
                 {[
@@ -202,17 +264,11 @@ export function PublicFeedbackPage() {
 
               {progress > 0 && progress < 100 && <p className="text-sm text-slate-600">Upload progress: {progress}%</p>}
               {error && <p className="text-sm text-rose-600">{error}</p>}
-              {statusMessage && (
-                <p className="flex items-center gap-2 text-sm text-emerald-700">
-                  <CheckCircle2 className="h-4 w-4" />
-                  {statusMessage}
-                </p>
-              )}
-
               <Button type="submit" disabled={submitting}>
                 {submitting ? "Submitting..." : "Submit feedback"}
               </Button>
             </form>
+            )}
           </Card>
 
           <Card>

@@ -8,9 +8,17 @@ import {
 } from "../services/project-service.js";
 import { sendSuccess } from "../utils/api-response.js";
 
+const PURPOSE_VALUES = ["customer_feedback", "product_review", "employee_survey", "event_feedback", "other"];
+const PRODUCT_TYPE_VALUES = ["saas", "mobile_app", "ecommerce", "agency", "education", "healthcare", "other"];
+
 export const createProjectSchema = z.object({
   name: z.string().min(2),
   slug: z.string().min(2).optional(),
+  organization: z.string().max(120).optional(),
+  purpose: z.enum(PURPOSE_VALUES).optional(),
+  productType: z.enum(PRODUCT_TYPE_VALUES).optional(),
+  website: z.string().url().or(z.literal("")).optional(),
+  description: z.string().max(500).optional(),
   logo: z.union([z.url(), z.literal("")]).optional(),
   theme: z
     .object({

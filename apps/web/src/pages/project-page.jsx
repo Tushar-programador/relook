@@ -15,20 +15,27 @@ export function ProjectPage() {
   const [analytics, setAnalytics] = useState(null);
   const [feedback, setFeedback] = useState([]);
   const [filter, setFilter] = useState("all");
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   async function loadProjectData() {
     try {
+      setLoading(true);
       setError("");
-      const [analyticsData, feedbackData] = await Promise.all([
-        api.getProjectAnalytics(projectId),
-        api.getProjectFeedback(projectId, filter === "all" ? {} : { status: filter })
-      ]);
+      const analyticsData = await api.getProjectAnalytics(projectId);
+      const resolvedProjectId = analyticsData?.project?._id || projectId;
+      const feedbackData = await api.getProjectFeedback(
+        resolvedProjectId,
+        filter === "all" ? {} : { status: filter }
+      );
 
       setAnalytics(analyticsData);
-      setFeedback(feedbackData.items);
+      setFeedback(Array.isArray(feedbackData?.items) ? feedbackData.items : []);
     } catch (err) {
+      setFeedback([]);
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -112,6 +119,7 @@ export function ProjectPage() {
           </div>
 
           {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
+          {loading && <p className="mt-4 text-sm text-slate-500">Loading feedback...</p>}
 
           <div className="mt-6 space-y-4">
             {feedback.map((item) => (
@@ -150,7 +158,9 @@ export function ProjectPage() {
               </div>
             ))}
 
-            {feedback.length === 0 && <p className="text-sm text-slate-500">No feedback matches the current filter.</p>}
+            {!loading && feedback.length === 0 && (
+              <p className="text-sm text-slate-500">No feedback matches the current filter.</p>
+            )}
           </div>
         </Card>
       </div>

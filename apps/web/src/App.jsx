@@ -13,6 +13,7 @@ import { PricingPage } from "./pages/pricing-page.jsx";
 import { ProjectPage } from "./pages/project-page.jsx";
 import { PublicFeedbackPage } from "./pages/public-feedback-page.jsx";
 import { VerifyEmailPage } from "./pages/verify-email-page.jsx";
+import { WallOfLovePage } from "./pages/wall-of-love-page.jsx";
 import { WidgetPage } from "./pages/widget-page.jsx";
 
 function ProtectedRoute({ children }) {
@@ -63,6 +64,7 @@ export default function App() {
         }
       />
       <Route path="/feedback/:slug" element={<PublicFeedbackPage />} />
+      <Route path="/wall/:slug" element={<WallOfLovePage />} />
       <Route path="/widget/:slug" element={<WidgetPage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

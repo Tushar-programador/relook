@@ -7,20 +7,38 @@ import {
 } from "../services/feedback-service.js";
 import { sendSuccess } from "../utils/api-response.js";
 
-export const createFeedbackSchema = z.object({
-  type: z.enum(["video", "audio", "text"]),
-  mediaUrl: z.url().optional(),
-  thumbnailUrl: z.url().optional(),
-  message: z.string().max(1000).optional(),
-  name: z.string().max(100).optional(),
-  email: z.email().optional(),
-  metadata: z
-    .object({
-      durationSeconds: z.number().nonnegative().optional(),
-      mimeType: z.string().optional()
-    })
-    .optional()
-});
+export const createFeedbackSchema = z
+  .object({
+    type: z.enum(["video", "audio", "text"]),
+    mediaUrl: z.union([z.url(), z.literal("")]).optional(),
+    thumbnailUrl: z.union([z.url(), z.literal("")]).optional(),
+    message: z.string().max(1000).optional(),
+    name: z.string().max(100).optional(),
+    email: z.union([z.email(), z.literal("")]).optional(),
+    metadata: z
+      .object({
+        durationSeconds: z.number().nonnegative().optional(),
+        mimeType: z.string().optional()
+      })
+      .optional()
+  })
+  .superRefine((value, ctx) => {
+    if (value.type === "text" && !value.message?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["message"],
+        message: "Message is required for text feedback"
+      });
+    }
+
+    if (value.type !== "text" && !value.mediaUrl) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["mediaUrl"],
+        message: "mediaUrl is required for audio and video feedback"
+      });
+    }
+  });
 
 export const listFeedbackQuerySchema = z.object({
   status: z.enum(["pending", "approved", "rejected"]).optional(),

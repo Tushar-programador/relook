@@ -23,6 +23,11 @@ export async function createProject(userId, input) {
     userId,
     name: input.name,
     slug,
+    organization: input.organization || "",
+    purpose: input.purpose || "customer_feedback",
+    productType: input.productType || "other",
+    website: input.website || "",
+    description: input.description || "",
     logo: input.logo || "",
     theme: input.theme || undefined
   });

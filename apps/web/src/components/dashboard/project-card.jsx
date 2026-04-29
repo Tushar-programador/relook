@@ -39,6 +39,11 @@ export function ProjectCard({ project }) {
           <Copy className="h-4 w-4" />
           Copy widget embed
         </Button>
+        <Button variant="secondary" asChild>
+          <a href={`/wall/${project.slug}`} target="_blank" rel="noreferrer">
+            View wall of love
+          </a>
+        </Button>
         <Button asChild className="gap-2">
           <Link to={`/projects/${project._id}`}>
             Manage project

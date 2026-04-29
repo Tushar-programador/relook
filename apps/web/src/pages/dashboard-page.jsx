@@ -1,18 +1,18 @@
 import { useEffect, useState } from "react";
+import { Plus } from "lucide-react";
 import { AppShell } from "../components/layout/app-shell.jsx";
+import { CreateProjectModal } from "../components/dashboard/create-project-modal.jsx";
 import { ProjectCard } from "../components/dashboard/project-card.jsx";
 import { StatsCard } from "../components/dashboard/stats-card.jsx";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardDescription, CardTitle } from "../components/ui/card.jsx";
-import { Input } from "../components/ui/input.jsx";
 import { api } from "../lib/api";
 
 export function DashboardPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ name: "", slug: "" });
-  const [submitting, setSubmitting] = useState(false);
+  const [showModal, setShowModal] = useState(false);
 
   async function loadProjects() {
     try {
@@ -30,20 +30,9 @@ export function DashboardPage() {
     loadProjects();
   }, []);
 
-  async function handleCreateProject(event) {
-    event.preventDefault();
-    setSubmitting(true);
-    setError("");
-
-    try {
-      await api.createProject(form);
-      setForm({ name: "", slug: "" });
-      await loadProjects();
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setSubmitting(false);
-    }
+  async function handleCreated(form) {
+    await api.createProject(form);
+    await loadProjects();
   }
 
   const totals = projects.reduce(
@@ -65,31 +54,21 @@ export function DashboardPage() {
           <StatsCard label="Approved" value={totals.approved} accent="#15803d" />
         </div>
 
-        <Card>
-          <CardTitle>Launch a new feedback portal</CardTitle>
-          <CardDescription className="mt-2">
-            Every project gets a public collection page, a moderation dashboard, and an embeddable widget.
-          </CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-foreground">Your feedback portals</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Each portal gets a public collection page, a moderation dashboard, and an embeddable widget.
+            </p>
+          </div>
+          <Button onClick={() => setShowModal(true)}>
+            <span className="flex items-center gap-2">
+              <Plus className="h-4 w-4" /> New portal
+            </span>
+          </Button>
+        </div>
 
-          <form className="mt-6 grid gap-4 md:grid-cols-[1fr_1fr_auto]" onSubmit={handleCreateProject}>
-            <Input
-              placeholder="Brand name"
-              value={form.name}
-              onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-              required
-            />
-            <Input
-              placeholder="custom-slug"
-              value={form.slug}
-              onChange={(event) => setForm((current) => ({ ...current, slug: event.target.value }))}
-            />
-            <Button type="submit" disabled={submitting}>
-              {submitting ? "Creating..." : "Create project"}
-            </Button>
-          </form>
-
-          {error && <p className="mt-4 text-sm text-rose-600">{error}</p>}
-        </Card>
+        {error && <p className="text-sm text-rose-600">{error}</p>}
 
         <div className="grid gap-5 xl:grid-cols-2">
           {!loading && projects.map((project) => <ProjectCard key={project._id} project={project} />)}
@@ -97,11 +76,22 @@ export function DashboardPage() {
 
         {!loading && projects.length === 0 && (
           <Card>
-            <CardTitle>No projects yet</CardTitle>
-            <CardDescription className="mt-2">Create your first project to start collecting testimonials.</CardDescription>
+            <CardTitle>No portals yet</CardTitle>
+            <CardDescription className="mt-2">
+              Create your first feedback portal to start collecting testimonials.
+            </CardDescription>
+            <Button className="mt-6" onClick={() => setShowModal(true)}>
+              <span className="flex items-center gap-2">
+                <Plus className="h-4 w-4" /> Create your first portal
+              </span>
+            </Button>
           </Card>
         )}
       </div>
+
+      {showModal && (
+        <CreateProjectModal onClose={() => setShowModal(false)} onCreated={handleCreated} />
+      )}
     </AppShell>
   );
 }

@@ -24,6 +24,8 @@ function getCloudinary() {
 export function createSignedUploadParams({ contentType, projectSlug }) {
   const instance = getCloudinary();
   const isVideo = contentType.startsWith("video/");
+  const isAudio = contentType.startsWith("audio/");
+  const isMedia = isVideo || isAudio;
   const timestamp = Math.round(Date.now() / 1000);
   const folder = `feedspace/${projectSlug}`;
 
@@ -33,11 +35,10 @@ export function createSignedUploadParams({ contentType, projectSlug }) {
   if (isVideo) {
     paramsToSign.eager = "q_auto:low,f_mp4,vc_h264";
     paramsToSign.eager_async = "true";
-    paramsToSign.resource_type = "video";
   }
 
   const signature = instance.utils.api_sign_request(paramsToSign, env.CLOUDINARY_API_SECRET);
-  const resourceType = isVideo ? "video" : "image";
+  const resourceType = isMedia ? "video" : "image";
 
   return {
     uploadUrl: `https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
