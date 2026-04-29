@@ -1,0 +1,19 @@
+{
+  "name": "feedspace-platform",
+  "private": true,
+  "version": "1.0.0",
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace @feedspace/api\" \"npm run dev --workspace @feedspace/web\"",
+    "build": "npm run build --workspace @feedspace/web",
+    "start": "npm run start --workspace @feedspace/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
