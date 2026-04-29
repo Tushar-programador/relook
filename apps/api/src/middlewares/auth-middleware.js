@@ -8,7 +8,7 @@ export async function requireAuth(req, _res, next) {
   const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
   if (!token) {
-    return next(new ApiError(401, "Authentication required"));
+    return next(new ApiError(401, "Authentication required. Provide a Bearer token in Authorization header."));
   }
 
   try {

@@ -57,7 +57,8 @@ export async function submit(req, res) {
 }
 
 export async function list(req, res) {
-  const data = await listFeedback(req.user._id, req.params.projectId, req.query);
+  const query = req.validated?.query || req.query;
+  const data = await listFeedback(req.user._id, req.params.projectId, query);
   return sendSuccess(res, data);
 }
 
