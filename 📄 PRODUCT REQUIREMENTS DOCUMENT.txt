@@ -1,0 +1,275 @@
+📄 PRODUCT REQUIREMENTS DOCUMENT (PRD)
+🏷️ Product Name
+
+FeedSpace (working name)
+
+📌 Category
+
+UGC Collection + Feedback + Testimonial SaaS
+
+🎯 Objective
+
+Enable businesses (especially social-first brands) to:
+
+Collect customer feedback (video, audio, text)
+Manage and moderate it
+Showcase it via embeddable widgets
+Convert feedback into reusable marketing content
+🧠 PROBLEM STATEMENT
+
+Small businesses (especially Instagram-first brands):
+
+Receive feedback in DMs (unstructured)
+Cannot reuse testimonials easily
+Lack tools for collecting video/audio feedback
+Have no central dashboard
+💡 SOLUTION
+
+A platform that provides:
+
+A public feedback page
+A dashboard for management
+A widget/iframe for display
+A media-first experience (video/audio)
+🎯 TARGET USERS
+Primary
+Instagram brands
+D2C startups
+Freelancers
+Secondary
+SaaS companies
+Agencies
+🧩 CORE FEATURES
+1️⃣ AUTH & USER MANAGEMENT
+Description
+
+Users can register/login and manage multiple projects.
+
+Requirements
+Email/password login
+JWT authentication
+Multi-project support
+APIs
+POST /auth/register
+POST /auth/login
+GET /auth/me
+2️⃣ PROJECT / BRAND MANAGEMENT
+Description
+
+Each user can create multiple brands/projects.
+
+Features
+Create/edit/delete project
+Unique slug (used in public URL)
+Branding customization
+Functional Requirements
+Slug must be unique
+User can only access own projects
+Data Model
+{
+  "_id": "ObjectId",
+  "userId": "ObjectId",
+  "name": "string",
+  "slug": "string",
+  "logo": "string",
+  "theme": {
+    "primaryColor": "string",
+    "accentColor": "string"
+  },
+  "createdAt": "Date"
+}
+3️⃣ PUBLIC FEEDBACK COLLECTION PAGE
+URL
+/feedback/:slug
+Description
+
+Public page where customers submit feedback.
+
+Features
+No authentication required
+Input types:
+Video recording
+Audio recording
+Text input
+Optional name/email
+Functional Requirements
+Must work on mobile (priority)
+Max video length (e.g., 60 sec)
+Upload progress indicator
+4️⃣ MEDIA RECORDING & UPLOAD
+Description
+
+Handles video/audio capture and storage.
+
+Requirements
+Use MediaRecorder API (frontend)
+Upload to cloud storage (R2/S3)
+Store metadata in DB
+Flow
+Client requests upload URL
+Upload directly to storage
+Save metadata in backend
+5️⃣ FEEDBACK MANAGEMENT (DASHBOARD)
+Description
+
+Users manage incoming feedback.
+
+Features
+View all feedback
+Filter by status:
+Pending
+Approved
+Rejected
+Approve/reject/delete
+Functional Requirements
+Only approved feedback appears publicly
+6️⃣ EMBED WIDGET SYSTEM
+Description
+
+Allow users to display testimonials on their website.
+
+Types
+iframe embed
+script embed (future)
+Features
+Show approved feedback only
+Layout options:
+Carousel
+Grid
+Example
+<iframe src="https://yourapp.com/widget/:slug"></iframe>
+7️⃣ ANALYTICS (BASIC)
+Features
+Total feedback count
+Breakdown:
+Video
+Audio
+Text
+8️⃣ BILLING & SUBSCRIPTIONS
+Integration
+
+Use Razorpay
+
+Plans
+Free
+50 feedback/month
+Basic widget
+Pro
+Unlimited feedback
+Custom branding
+Business
+Analytics
+API access
+9️⃣ AI FEATURES (PHASE 2)
+Features
+Feedback summarization
+Sentiment analysis
+Highlight extraction
+🏗️ TECHNICAL ARCHITECTURE
+Frontend
+React
+Tailwind CSS
+shadcn/ui
+Backend
+Node.js (Express)
+Database
+MongoDB (Mongoose)
+Storage
+Cloudflare R2 / AWS S3
+Media Processing
+FFmpeg
+🧱 SYSTEM DESIGN FLOW
+User creates project
+Shares public link
+Customer submits feedback
+Media uploaded to storage
+Metadata saved in DB
+User approves feedback
+Widget displays approved content
+🗄️ DATABASE DESIGN
+Users
+{
+  "_id": "ObjectId",
+  "email": "string",
+  "passwordHash": "string",
+  "plan": "string",
+  "createdAt": "Date"
+}
+Projects
+{
+  "_id": "ObjectId",
+  "userId": "ObjectId",
+  "name": "string",
+  "slug": "string"
+}
+Feedback
+{
+  "_id": "ObjectId",
+  "projectId": "ObjectId",
+  "type": "video|audio|text",
+  "message": "string",
+  "mediaUrl": "string",
+  "status": "pending|approved|rejected",
+  "createdAt": "Date"
+}
+🔌 API DESIGN (SUMMARY)
+Auth
+POST /auth/register
+POST /auth/login
+Projects
+POST /projects
+GET /projects
+PATCH /projects/:id
+Feedback
+POST /feedback/:slug
+GET /feedback
+PATCH /feedback/:id/status
+Public
+GET /public/:slug/feedback
+🚨 NON-FUNCTIONAL REQUIREMENTS
+Performance
+Media delivery via CDN
+Lazy loading for videos
+Security
+JWT auth
+Rate limiting
+Input validation
+Scalability
+Stateless backend
+Horizontal scaling ready
+⚠️ RISKS & CHALLENGES
+1. Storage Cost
+Videos are expensive → compress
+2. Spam
+Add CAPTCHA
+Rate limiting
+3. Upload Failures
+Retry mechanism
+📊 SUCCESS METRICS
+# of projects created
+# of feedback submissions
+Conversion to paid plans
+Widget impressions
+🚀 MVP SCOPE
+Must Have
+Auth
+Project creation
+Feedback collection (text + video)
+Dashboard
+Approval system
+iframe widget
+Not Required (v1)
+AI
+Advanced analytics
+Script embed
+🧠 FUTURE ROADMAP
+WhatsApp integration
+AI video editing
+Auto subtitles
+Social sharing tools
+✅ FINAL NOTE
+
+If you build THIS properly:
+
+It’s not just a project
+It’s a real SaaS startup + portfolio killer

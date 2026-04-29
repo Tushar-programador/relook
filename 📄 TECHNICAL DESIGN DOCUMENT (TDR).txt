@@ -1,0 +1,239 @@
+📄 TECHNICAL DESIGN DOCUMENT (TDR)
+🏷️ System Name
+
+FeedSpace Backend & Platform
+
+🧠 1. SYSTEM OVERVIEW
+Goal
+
+Build a multi-tenant SaaS platform that:
+
+Collects feedback (video/audio/text)
+Stores and processes media
+Provides dashboard + embed widgets
+Scales to thousands of users
+🏗️ 2. HIGH-LEVEL ARCHITECTURE
+[ Client (React) ]
+        ↓
+[ API Server (Node.js + Express) ]
+        ↓
+[ MongoDB ]       [ Object Storage (R2/S3) ]
+        ↓
+[ CDN for media delivery ]
+🧩 3. ARCHITECTURE STYLE
+Chosen Pattern
+
+Layered Architecture (Service-based modular design)
+
+Why?
+Easier to scale later into microservices
+Clean separation of concerns
+Faster MVP development
+📦 4. BACKEND STRUCTURE
+src/
+ ├── controllers/     → request handlers
+ ├── services/        → business logic
+ ├── models/          → mongoose schemas
+ ├── routes/          → API routes
+ ├── middlewares/     → auth, validation
+ ├── utils/           → helpers
+ ├── config/          → env configs
+ └── app.js
+⚙️ 5. TECH STACK DECISIONS
+Backend
+Node.js + Express
+Why not NestJS?
+Faster iteration
+Less boilerplate
+You already prefer JS flexibility
+Database
+MongoDB (Mongoose)
+Why MongoDB?
+Flexible schema (feedback types vary)
+Fast iteration for MVP
+Good for document-based data (feedback/media)
+Storage
+Cloudflare R2 (preferred) / AWS S3
+Decision Reason
+R2 → lower cost (no egress fees)
+S3 → fallback if needed
+Frontend
+React + shadcn/ui + Tailwind
+🧠 6. DATA MODEL DESIGN
+Users Collection
+{
+  "_id": "ObjectId",
+  "email": "string",
+  "passwordHash": "string",
+  "plan": "free|pro|business",
+  "createdAt": "Date"
+}
+Indexes
+unique index on email
+Projects Collection
+{
+  "_id": "ObjectId",
+  "userId": "ObjectId",
+  "name": "string",
+  "slug": "string",
+  "logo": "string",
+  "theme": {},
+  "createdAt": "Date"
+}
+Indexes
+unique index on slug
+index on userId
+Feedback Collection
+{
+  "_id": "ObjectId",
+  "projectId": "ObjectId",
+  "type": "video|audio|text",
+  "mediaUrl": "string",
+  "thumbnailUrl": "string",
+  "message": "string",
+  "status": "pending|approved|rejected",
+  "createdAt": "Date"
+}
+Indexes
+index on projectId
+index on status
+compound: (projectId + status)
+🔌 7. API DESIGN PRINCIPLES
+Style
+RESTful
+JSON-based
+Response Format
+{
+  "success": true,
+  "data": {},
+  "error": null
+}
+🔐 8. AUTHENTICATION DESIGN
+Method
+JWT (Access Token)
+Flow
+User logs in
+Server returns JWT
+Client stores token
+Token sent in headers
+Authorization: Bearer <token>
+📤 9. MEDIA UPLOAD DESIGN
+Approach
+
+Direct Upload via Signed URL
+
+Flow
+Client → Backend → get signed URL  
+Client → Upload to R2/S3  
+Client → Send metadata to backend
+Why?
+Reduces backend load
+Scales easily
+🎥 10. MEDIA PROCESSING
+Tool
+FFmpeg
+Tasks
+Compress video
+Generate thumbnail
+🧠 11. BUSINESS LOGIC LAYER
+Example: Feedback Approval
+IF user owns project
+  → update feedback status
+ELSE
+  → reject request
+🧱 12. EMBED WIDGET DESIGN
+Type
+iframe (MVP)
+Endpoint
+/widget/:slug
+Data Source
+/public/:slug/feedback
+Security
+Only approved feedback returned
+⚡ 13. PERFORMANCE STRATEGY
+Optimizations
+CDN for media
+Pagination (limit=20)
+Lazy loading videos
+🧠 14. SCALABILITY PLAN
+Phase 1 (MVP)
+Single server
+Monolith
+Phase 2
+Separate:
+Media service
+API service
+Phase 3
+Microservices (optional)
+🔐 15. SECURITY DESIGN
+Measures
+JWT authentication
+Rate limiting (IP-based)
+Input validation (Joi/Zod)
+CORS protection
+🚨 16. ERROR HANDLING
+Standard Format
+{
+  "success": false,
+  "error": {
+    "message": "Something went wrong"
+  }
+}
+📊 17. LOGGING & MONITORING
+Tools
+Winston (logging)
+Morgan (HTTP logs)
+🔄 18. RATE LIMITING
+Strategy
+Per IP limit (feedback submission)
+Prevent spam
+🧪 19. TESTING STRATEGY
+Types
+Unit tests (services)
+API tests (routes)
+💳 20. BILLING SYSTEM
+Integration
+Razorpay
+Flow
+User selects plan
+Payment processed
+Webhook updates plan
+📦 21. DEPLOYMENT STRATEGY
+Backend
+VPS / AWS EC2 / Railway
+Database
+MongoDB Atlas
+Storage
+Cloudflare R2
+CDN
+Cloudflare
+🔁 22. CI/CD (FUTURE)
+GitHub Actions
+Auto deploy on push
+⚠️ 23. RISKS & MITIGATION
+Risk	Solution
+Large video uploads	Limit duration
+Spam feedback	CAPTCHA + rate limit
+Storage cost	Compress videos
+🧠 24. DESIGN TRADEOFFS
+MongoDB vs SQL
+
+✔ Flexible schema
+❌ Harder joins
+
+Monolith vs Microservices
+
+✔ Faster dev
+❌ Scaling later needed
+
+🧭 25. FUTURE EXTENSIONS
+AI processing pipeline
+WebSocket notifications
+Script-based widget
+Multi-language support
+✅ FINAL TAKE
+
+This TDR ensures:
+
+You’re not just coding randomly
+You’re building like a real SaaS engineer
