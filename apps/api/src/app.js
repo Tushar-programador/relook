@@ -10,10 +10,28 @@ import { apiRouter } from "./routes/index.js";
 
 export function createApp() {
   const app = express();
+  const allowedOrigins = [
+    env.CLIENT_URL,
+    ...(env.CLIENT_URLS || "")
+      .split(",")
+      .map((origin) => origin.trim())
+      .filter(Boolean)
+  ];
+
+  if (env.NODE_ENV === "production") {
+    // Required behind proxies on platforms like Render/Fly/Heroku for correct IP handling.
+    app.set("trust proxy", 1);
+  }
 
   app.use(
     cors({
-      origin: env.CLIENT_URL,
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error("Not allowed by CORS"));
+      },
       credentials: false
     })
   );
