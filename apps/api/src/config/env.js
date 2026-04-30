@@ -12,6 +12,7 @@ const envSchema = z.object({
   CLIENT_URL: z.string().url().default("http://localhost:5173"),
   CLIENT_URLS: z.string().optional(),
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
+  MONGODB_URI_FALLBACK: z.string().optional(),
   JWT_SECRET: z.string().min(32, "JWT_SECRET must be at least 32 characters"),
   JWT_EXPIRES_IN: z.string().default("7d"),
   OTP_EXPIRES_MINUTES: z.coerce.number().int().positive().default(10),
