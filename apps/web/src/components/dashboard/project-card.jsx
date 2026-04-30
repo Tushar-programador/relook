@@ -39,6 +39,14 @@ export function ProjectCard({ project }) {
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Approved</p>
           <p className="mt-2 text-3xl font-semibold">{project.stats.approvedFeedback}</p>
         </div>
+        <div className="rounded-3xl bg-white/85 p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Review link opens</p>
+          <p className="mt-2 text-3xl font-semibold">{project.stats.totalLinkOpens || 0}</p>
+        </div>
+        <div className="rounded-3xl bg-white/85 p-4">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Unique visitors</p>
+          <p className="mt-2 text-3xl font-semibold">{project.stats.uniqueLinkVisitors || 0}</p>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-3">
@@ -55,6 +63,11 @@ export function ProjectCard({ project }) {
         <Button variant="secondary" className="gap-2" onClick={copyEmbed}>
           <Copy className="h-4 w-4" />
           Copy widget embed
+        </Button>
+        <Button variant="secondary" asChild>
+          <a href={`/feedback/${project.slug}`} target="_blank" rel="noreferrer">
+            Open portal webpage
+          </a>
         </Button>
         <Button variant="secondary" asChild>
           <a href={`/wall/${project.slug}`} target="_blank" rel="noreferrer">

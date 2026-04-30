@@ -40,6 +40,7 @@ export const api = {
     request(`/feedback/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
   deleteFeedback: (id) => request(`/feedback/${id}`, { method: "DELETE" }),
   getPublicFeed: (slug) => request(`/public/${slug}/feedback`),
+  trackPublicOpen: (slug, body) => request(`/public/${slug}/track-open`, { method: "POST", body: JSON.stringify(body) }),
   submitFeedback: (slug, body) => request(`/feedback/${slug}`, { method: "POST", body: JSON.stringify(body) }),
   signPublicUpload: (body) => request("/uploads/public/sign", { method: "POST", body: JSON.stringify(body) }),
   signPrivateUpload: (body) => request("/uploads/sign", { method: "POST", body: JSON.stringify(body) })

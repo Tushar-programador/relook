@@ -1,10 +1,55 @@
-import { LayoutDashboard, LogOut, Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { CircleHelp, LayoutDashboard, LogOut, Rocket, Sparkles } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/auth-context.jsx";
+import { api } from "../../lib/api";
 import { Button } from "../ui/button.jsx";
+
+const navItems = [
+  {
+    to: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard
+  },
+  {
+    to: "/features",
+    label: "Features",
+    icon: Rocket
+  },
+  {
+    to: "/pricing",
+    label: "Pricing",
+    icon: CircleHelp
+  }
+];
 
 export function AppShell({ children }) {
   const { user, logout } = useAuth();
+  const [portalLink, setPortalLink] = useState("/dashboard");
+
+  useEffect(() => {
+    let active = true;
+
+    api
+      .getProjects()
+      .then((projects) => {
+        if (!active) {
+          return;
+        }
+
+        const firstProjectSlug = projects?.[0]?.slug;
+        setPortalLink(firstProjectSlug ? `/feedback/${firstProjectSlug}` : "/dashboard");
+      })
+      .catch(() => {
+        if (active) {
+          setPortalLink("/dashboard");
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   return (
     <div className="min-h-screen px-4 py-6 md:px-8">
@@ -21,18 +66,36 @@ export function AppShell({ children }) {
           </Link>
 
           <nav className="mt-8 space-y-2">
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm no-underline transition ${
-                  isActive ? "bg-primary text-white" : "text-slate-700 hover:bg-white/80"
-                }`
-              }
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </NavLink>
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm no-underline transition ${
+                      isActive ? "bg-primary text-white" : "text-slate-700 hover:bg-white/80"
+                    }`
+                  }
+                >
+                  <Icon className="h-4 w-4" />
+                  {item.label}
+                </NavLink>
+              );
+            })}
           </nav>
+
+          <div className="mt-6 rounded-3xl bg-white/80 p-4">
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Quick links</p>
+            <div className="mt-3 flex flex-col gap-2 text-sm">
+              <Link to={portalLink} className="rounded-xl px-3 py-2 text-slate-700 no-underline transition hover:bg-white">
+                Your portal page
+              </Link>
+              <Link to="/help" className="rounded-xl px-3 py-2 text-slate-700 no-underline transition hover:bg-white">
+                Help center
+              </Link>
+            </div>
+          </div>
 
           <div className="mt-10 rounded-3xl bg-white/85 p-5">
             <p className="text-sm text-slate-500">Signed in as</p>

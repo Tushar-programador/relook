@@ -5,6 +5,7 @@ import { AboutPage } from "./pages/about-page.jsx";
 import { AuthPage } from "./pages/auth-page.jsx";
 import { DashboardPage } from "./pages/dashboard-page.jsx";
 import { FeaturesPage } from "./pages/features-page.jsx";
+import { HelpPage } from "./pages/help-page.jsx";
 import { HomePage } from "./pages/home-page.jsx";
 import { ContactPage } from "./pages/contact-page.jsx";
 import { ForgotPasswordPage } from "./pages/forgot-password-page.jsx";
@@ -12,6 +13,7 @@ import { NotFoundPage } from "./pages/not-found-page.jsx";
 import { PricingPage } from "./pages/pricing-page.jsx";
 import { ProjectPage } from "./pages/project-page.jsx";
 import { PublicFeedbackPage } from "./pages/public-feedback-page.jsx";
+import { ReviewSpotlightPage } from "./pages/review-spotlight-page.jsx";
 import { VerifyEmailPage } from "./pages/verify-email-page.jsx";
 import { WallOfLovePage } from "./pages/wall-of-love-page.jsx";
 import { WidgetPage } from "./pages/widget-page.jsx";
@@ -63,7 +65,16 @@ export default function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/help"
+        element={
+          <ProtectedRoute>
+            <HelpPage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/feedback/:slug" element={<PublicFeedbackPage />} />
+      <Route path="/spotlight/:slug/:feedbackId" element={<ReviewSpotlightPage />} />
       <Route path="/wall/:slug" element={<WallOfLovePage />} />
       <Route path="/widget/:slug" element={<WidgetPage />} />
       <Route path="*" element={<NotFoundPage />} />

@@ -1,8 +1,24 @@
 import mongoose from "mongoose";
 import { FeedbackModel } from "../models/feedback-model.js";
+import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
+import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
 import { ApiError } from "../utils/api-error.js";
 import { createSlug } from "../utils/slugify.js";
+
+function makeLastNDaysLabels(days) {
+  const labels = [];
+  const now = new Date();
+
+  for (let offset = days - 1; offset >= 0; offset -= 1) {
+    const date = new Date(now);
+    date.setHours(0, 0, 0, 0);
+    date.setDate(date.getDate() - offset);
+    labels.push(date.toISOString().slice(0, 10));
+  }
+
+  return labels;
+}
 
 async function ensureSlugAvailability(slug, excludedId = null) {
   const existingProject = await ProjectModel.findOne({
@@ -60,11 +76,36 @@ export async function listProjects(userId) {
     counts.map((count) => [String(count._id), count])
   );
 
+  const visitStats = await PortalVisitModel.aggregate([
+    {
+      $match: {
+        projectId: { $in: projectIds }
+      }
+    },
+    {
+      $group: {
+        _id: "$projectId",
+        totalLinkOpens: { $sum: "$openCount" },
+        uniqueLinkVisitors: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const visitStatsByProject = Object.fromEntries(
+    visitStats.map((item) => [String(item._id), item])
+  );
+
   return projects.map((project) => ({
     ...project,
-    stats: countsByProject[String(project._id)] || {
-      totalFeedback: 0,
-      approvedFeedback: 0
+    stats: {
+      ...(countsByProject[String(project._id)] || {
+        totalFeedback: 0,
+        approvedFeedback: 0
+      }),
+      ...(visitStatsByProject[String(project._id)] || {
+        totalLinkOpens: 0,
+        uniqueLinkVisitors: 0
+      })
     }
   }));
 }
@@ -122,6 +163,8 @@ export async function updateProject(userId, projectId, input) {
 export async function deleteProject(userId, projectId) {
   const project = await getProjectById(userId, projectId);
   await FeedbackModel.deleteMany({ projectId: project._id });
+  await PortalOpenEventModel.deleteMany({ projectId: project._id });
+  await PortalVisitModel.deleteMany({ projectId: project._id });
   await project.deleteOne();
 }
 
@@ -168,6 +211,71 @@ export async function getProjectAnalytics(userId, projectId) {
     }
   ]);
 
+  const [visitSummary] = await PortalVisitModel.aggregate([
+    { $match: { projectId: project._id } },
+    {
+      $group: {
+        _id: null,
+        totalLinkOpens: { $sum: "$openCount" },
+        uniqueLinkVisitors: { $sum: 1 }
+      }
+    }
+  ]);
+
+  const timelineDays = 14;
+  const timelineStart = new Date();
+  timelineStart.setHours(0, 0, 0, 0);
+  timelineStart.setDate(timelineStart.getDate() - (timelineDays - 1));
+
+  const [dailyOpens, dailyResponses] = await Promise.all([
+    PortalOpenEventModel.aggregate([
+      { $match: { projectId: project._id, createdAt: { $gte: timelineStart } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          },
+          opens: { $sum: 1 }
+        }
+      }
+    ]),
+    FeedbackModel.aggregate([
+      { $match: { projectId: project._id, createdAt: { $gte: timelineStart } } },
+      {
+        $group: {
+          _id: {
+            $dateToString: {
+              format: "%Y-%m-%d",
+              date: "$createdAt"
+            }
+          },
+          responses: { $sum: 1 }
+        }
+      }
+    ])
+  ]);
+
+  const opensByDate = Object.fromEntries(dailyOpens.map((entry) => [entry._id, entry.opens]));
+  const responsesByDate = Object.fromEntries(dailyResponses.map((entry) => [entry._id, entry.responses]));
+  const timeline = makeLastNDaysLabels(timelineDays).map((date) => ({
+    date,
+    opens: opensByDate[date] || 0,
+    responses: responsesByDate[date] || 0
+  }));
+
+  const recentResponses = await FeedbackModel.find({ projectId: project._id })
+    .sort({ createdAt: -1 })
+    .limit(12)
+    .select("name email type status createdAt")
+    .lean();
+
+  const totalFeedback = summary?.total || 0;
+  const totalLinkOpens = visitSummary?.totalLinkOpens || 0;
+  const responseRate = totalLinkOpens > 0 ? Number(((totalFeedback / totalLinkOpens) * 100).toFixed(1)) : 0;
+
   return {
     project,
     metrics: summary || {
@@ -178,6 +286,14 @@ export async function getProjectAnalytics(userId, projectId) {
       pending: 0,
       approved: 0,
       rejected: 0
-    }
+    },
+    linkMetrics: {
+      totalLinkOpens,
+      uniqueLinkVisitors: visitSummary?.uniqueLinkVisitors || 0,
+      totalResponses: totalFeedback,
+      responseRate
+    },
+    timeline,
+    responders: recentResponses
   };
 }

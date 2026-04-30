@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import { FeedbackModel } from "../models/feedback-model.js";
+import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
+import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
 import { ApiError } from "../utils/api-error.js";
 
@@ -123,4 +125,56 @@ export async function getApprovedFeedback(projectSlug) {
     project,
     items
   };
+}
+
+export async function trackPublicFeedbackOpen(projectSlug, visitorId) {
+  const project = await ProjectModel.findOne({ slug: projectSlug }).lean();
+  if (!project) {
+    throw new ApiError(404, "Project not found");
+  }
+
+  if (!visitorId) {
+    return { tracked: false };
+  }
+
+  const now = new Date();
+  const dedupeWindowMs = 15 * 1000;
+  const minLastOpenedAt = new Date(now.getTime() - dedupeWindowMs);
+
+  let updateResult;
+
+  try {
+    updateResult = await PortalVisitModel.updateOne(
+      {
+        projectId: project._id,
+        visitorId,
+        $or: [{ lastOpenedAt: { $lte: minLastOpenedAt } }, { lastOpenedAt: { $exists: false } }]
+      },
+      {
+        $set: { lastOpenedAt: now },
+        $inc: { openCount: 1 }
+      },
+      { upsert: true }
+    );
+  } catch (error) {
+    // If two requests race on first visit, unique index may throw for one of them.
+    // Treat the loser as a duplicate and avoid double counting.
+    if (error?.code === 11000) {
+      return { tracked: true, deduped: true };
+    }
+
+    throw error;
+  }
+
+  const counted = (updateResult.modifiedCount || 0) > 0 || (updateResult.upsertedCount || 0) > 0;
+  if (!counted) {
+    return { tracked: true, deduped: true };
+  }
+
+  await PortalOpenEventModel.create({
+    projectId: project._id,
+    visitorId
+  });
+
+  return { tracked: true, deduped: false };
 }

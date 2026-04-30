@@ -40,18 +40,20 @@ export function DashboardPage() {
       acc.projects += 1;
       acc.feedback += project.stats.totalFeedback;
       acc.approved += project.stats.approvedFeedback;
+      acc.opens += project.stats.totalLinkOpens || 0;
       return acc;
     },
-    { projects: 0, feedback: 0, approved: 0 }
+    { projects: 0, feedback: 0, approved: 0, opens: 0 }
   );
 
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <StatsCard label="Projects" value={totals.projects} accent="#0f766e" />
           <StatsCard label="Total feedback" value={totals.feedback} accent="#ea580c" />
           <StatsCard label="Approved" value={totals.approved} accent="#15803d" />
+          <StatsCard label="Review link opens" value={totals.opens} accent="#2563eb" />
         </div>
 
         <div className="flex items-center justify-between">

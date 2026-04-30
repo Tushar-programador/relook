@@ -9,6 +9,19 @@ import { Input } from "../components/ui/input.jsx";
 import { Textarea } from "../components/ui/textarea.jsx";
 import { api } from "../lib/api";
 
+function getOrCreateVisitorId() {
+  const key = "feedspace-visitor-id";
+  const existing = localStorage.getItem(key);
+
+  if (existing) {
+    return existing;
+  }
+
+  const created = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  localStorage.setItem(key, created);
+  return created;
+}
+
 async function uploadToCloudinary(uploadParams, file, setProgress) {
   const formData = new FormData();
   formData.append("file", file);
@@ -59,6 +72,13 @@ export function PublicFeedbackPage() {
       .getPublicFeed(slug)
       .then(setPageData)
       .catch((err) => setError(err.message));
+  }, [slug]);
+
+  useEffect(() => {
+    const visitorId = getOrCreateVisitorId();
+    api.trackPublicOpen(slug, { visitorId }).catch(() => {
+      // Best-effort analytics tracking should never block public form usage.
+    });
   }, [slug]);
 
   useEffect(() => {
