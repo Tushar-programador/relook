@@ -2,10 +2,9 @@ services:
   - type: web
     name: feedspace-api
     runtime: node
-    rootDir: apps/api
     plan: free
     buildCommand: npm install
-    startCommand: npm run start
+    startCommand: node apps/api/src/server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
