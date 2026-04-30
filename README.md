@@ -46,11 +46,9 @@ Recommended free setup:
 
 ### One-click deploy
 
-Update REPO_URL in each button link with your GitHub repository URL after you push this project.
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Tushar-programador/relook)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=REPO_URL)
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=REPO_URL&root-directory=apps%2Fweb&project-name=feedspace-web&env=VITE_API_URL)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FTushar-programador%2Frelook&root-directory=apps%2Fweb&project-name=relook-web&env=VITE_API_URL)
 
 ### Environment variables (prefilled)
 
@@ -60,8 +58,8 @@ Set these on your hosting providers. Use the Example value format as guidance, n
 | --- | --- | --- | --- | --- |
 | NODE_ENV | API | Yes | production | Keep as production in hosted API |
 | PORT | API | Yes | 10000 | Render injects port automatically; do not hardcode elsewhere |
-| CLIENT_URL | API | Yes | https://feedspace-web.vercel.app | Main web origin allowed by CORS |
-| CLIENT_URLS | API | No | https://feedspace-web-git-main.vercel.app,https://feedspace-web-preview.vercel.app | Optional extra origins, comma-separated |
+| CLIENT_URL | API | Yes | https://relook-web.vercel.app | Main web origin allowed by CORS |
+| CLIENT_URLS | API | No | https://relook-web-git-main.vercel.app,https://relook-web-preview.vercel.app | Optional extra origins, comma-separated |
 | MONGODB_URI | API | Yes | mongodb+srv://user:password@cluster.mongodb.net/feedspace | Use Atlas connection string |
 | JWT_SECRET | API | Yes | a-very-long-random-string-at-least-32-chars | Generate a strong secret |
 | JWT_EXPIRES_IN | API | Yes | 7d | Token expiration window |
