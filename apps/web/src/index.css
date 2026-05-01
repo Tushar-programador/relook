@@ -78,6 +78,45 @@ body {
 .reveal-scale.in-view { animation: scalePop    0.65s cubic-bezier(0.22,1,0.36,1) forwards; }
 
 .reveal.delay-1 { animation-delay: 0.1s; }
+
+/* ── Floating orbs ── */
+@keyframes floatOrb1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(40px, -60px) scale(1.08); }
+  66%       { transform: translate(-30px, 30px) scale(0.95); }
+}
+@keyframes floatOrb2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  40%       { transform: translate(-50px, 40px) scale(1.1); }
+  70%       { transform: translate(35px, -45px) scale(0.92); }
+}
+@keyframes floatOrb3 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25%       { transform: translate(25px, 50px) scale(1.06); }
+  75%       { transform: translate(-40px, -30px) scale(0.97); }
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(72px);
+  pointer-events: none;
+}
+.orb-1 {
+  width: 420px; height: 420px;
+  background: radial-gradient(circle, rgba(13,148,136,0.38), transparent 70%);
+  animation: floatOrb1 12s ease-in-out infinite;
+}
+.orb-2 {
+  width: 320px; height: 320px;
+  background: radial-gradient(circle, rgba(249,115,22,0.32), transparent 70%);
+  animation: floatOrb2 15s ease-in-out infinite;
+}
+.orb-3 {
+  width: 260px; height: 260px;
+  background: radial-gradient(circle, rgba(13,148,136,0.22), transparent 70%);
+  animation: floatOrb3 18s ease-in-out infinite;
+}
 .reveal.delay-2 { animation-delay: 0.2s; }
 .reveal.delay-3 { animation-delay: 0.3s; }
 .reveal.delay-4 { animation-delay: 0.4s; }
