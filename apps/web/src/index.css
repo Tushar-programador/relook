@@ -153,3 +153,27 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* ── GSAP cursor glow ── */
+#cursor-glow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 360px; height: 360px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13,148,136,0.18) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
+  transition: opacity 0.3s;
+}
+
+/* ── Pricing card tilt wrapper ── */
+.pricing-card-wrap {
+  perspective: 900px;
+}
+.pricing-card-inner {
+  transition: transform 0.08s linear, box-shadow 0.08s linear;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
