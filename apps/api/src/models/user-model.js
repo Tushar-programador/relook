@@ -51,6 +51,14 @@ const userSchema = new mongoose.Schema(
     otp: {
       type: otpSchema,
       default: () => ({})
+    },
+    stripeCustomerId: {
+      type: String,
+      default: ""
+    },
+    stripeSubscriptionId: {
+      type: String,
+      default: ""
     }
   },
   {
