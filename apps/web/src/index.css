@@ -177,3 +177,84 @@ body {
   transform-style: preserve-3d;
   will-change: transform;
 }
+
+/* ── Custom cursor ── */
+body.has-custom-cursor,
+body.has-custom-cursor * {
+  cursor: none !important;
+}
+
+#cur-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: hsl(172,72%,31%);
+  pointer-events: none;
+  z-index: 10001;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+#cur-ring {
+  position: fixed;
+  top: 0; left: 0;
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  border: 2px solid hsl(172,72%,31%);
+  opacity: 0.55;
+  pointer-events: none;
+  z-index: 10000;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+#cur-shadow {
+  position: fixed;
+  top: 0; left: 0;
+  width: 320px; height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13,148,136,0.15) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 9998;
+  transform: translate(-50%, -50%);
+  mix-blend-mode: multiply;
+  will-change: transform;
+}
+
+.cur-trail {
+  position: fixed;
+  top: 0; left: 0;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: hsl(24,95%,61%);
+  pointer-events: none;
+  z-index: 9999;
+  transform: translate(-50%, -50%);
+  will-change: transform, opacity;
+}
+
+/* ring grows on hovering interactive elements */
+body.cursor-hover #cur-ring {
+  width: 60px;
+  height: 60px;
+  opacity: 0.3;
+  background: rgba(13,148,136,0.08);
+  border-color: hsl(172,72%,31%);
+  transition: width 0.25s cubic-bezier(0.22,1,0.36,1),
+              height 0.25s cubic-bezier(0.22,1,0.36,1),
+              opacity 0.25s,
+              background 0.25s;
+}
+
+/* cursor enters / leaves viewport */
+#cur-dot, #cur-ring, #cur-shadow, .cur-trail {
+  transition: opacity 0.25s;
+}
+body.cursor-out #cur-dot,
+body.cursor-out #cur-ring,
+body.cursor-out #cur-shadow,
+body.cursor-out .cur-trail {
+  opacity: 0 !important;
+}
