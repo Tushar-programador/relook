@@ -38,6 +38,12 @@ export function AuthProvider({ children }) {
         const data = await api.register(credentials);
         return data;
       },
+      async verifyEmail(payload) {
+        const data = await api.verifyEmail(payload);
+        localStorage.setItem("feedspace-token", data.token);
+        setUser(data.user);
+        return data;
+      },
       logout() {
         localStorage.removeItem("feedspace-token");
         setUser(null);

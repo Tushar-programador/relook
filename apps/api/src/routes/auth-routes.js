@@ -6,6 +6,7 @@ import {
 	login,
 	me,
 	register,
+	registerSchema,
 	resendVerification,
 	resetPassword,
 	resetPasswordSchema,
@@ -18,7 +19,7 @@ import { asyncHandler } from "../utils/async-handler.js";
 
 const router = Router();
 
-router.post("/register", validate(authSchema), asyncHandler(register));
+router.post("/register", validate(registerSchema), asyncHandler(register));
 router.post("/login", validate(authSchema), asyncHandler(login));
 router.post("/verify-email", validate(verifyOtpSchema), asyncHandler(verifyEmail));
 router.post("/resend-verification", validate(emailSchema), asyncHandler(resendVerification));

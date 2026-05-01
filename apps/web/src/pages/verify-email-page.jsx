@@ -3,10 +3,12 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardDescription, CardTitle } from "../components/ui/card.jsx";
 import { Input } from "../components/ui/input.jsx";
-import { api } from "../lib/api";
+import { api } from "../lib/api.js";
+import { useAuth } from "../context/auth-context.jsx";
 
 export function VerifyEmailPage() {
   const navigate = useNavigate();
+  const { verifyEmail } = useAuth();
   const [searchParams] = useSearchParams();
   const defaultEmail = useMemo(() => searchParams.get("email") || "", [searchParams]);
   const [form, setForm] = useState({ email: defaultEmail, otp: "" });
@@ -22,11 +24,8 @@ export function VerifyEmailPage() {
     setSuccess("");
 
     try {
-      const data = await api.verifyEmail(form);
-      setSuccess(data.message || "Email verified. You can log in now.");
-      setTimeout(() => {
-        navigate("/login");
-      }, 900);
+      await verifyEmail(form);
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
