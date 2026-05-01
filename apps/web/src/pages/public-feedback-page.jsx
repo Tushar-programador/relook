@@ -82,6 +82,15 @@ export function PublicFeedbackPage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!pageData?.customCss) return;
+    const el = document.createElement("style");
+    el.id = "feedspace-custom-css";
+    el.textContent = pageData.customCss;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, [pageData?.customCss]);
+
+  useEffect(() => {
     setSelectedFile(null);
     setRecordedFile(null);
     setProgress(0);

@@ -51,6 +51,14 @@ const projectSchema = new mongoose.Schema(
     theme: {
       primaryColor: { type: String, default: "#0f766e" },
       accentColor: { type: String, default: "#f59e0b" }
+    },
+    customCss: {
+      type: String,
+      default: ""
+    },
+    apiKey: {
+      type: String,
+      default: ""
     }
   },
   {

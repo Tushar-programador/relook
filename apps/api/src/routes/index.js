@@ -6,6 +6,10 @@ import { feedbackRouter } from "./feedback-routes.js";
 import { projectRouter } from "./project-routes.js";
 import { publicRouter } from "./public-routes.js";
 import { uploadRouter } from "./upload-routes.js";
+import { v1Router } from "./v1-routes.js";
+import { requireAuth } from "../middlewares/auth-middleware.js";
+import { acceptInvite } from "../controllers/team-controller.js";
+import { asyncHandler } from "../utils/async-handler.js";
 
 const router = Router();
 
@@ -26,5 +30,9 @@ router.use("/public", publicRouter);
 router.use("/uploads", uploadRouter);
 router.use("/ai", aiRouter);
 router.use("/billing", billingRouter);
+router.use("/v1", v1Router);
+
+// Team invite accept – standalone route so the token alone is enough
+router.post("/projects/team/accept/:token", requireAuth, asyncHandler(acceptInvite));
 
 export { router as apiRouter };

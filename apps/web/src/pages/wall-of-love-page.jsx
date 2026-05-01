@@ -43,6 +43,15 @@ export function WallOfLovePage() {
       .catch((err) => setError(err.message));
   }, [slug]);
 
+  useEffect(() => {
+    if (!data?.customCss) return;
+    const el = document.createElement("style");
+    el.id = "feedspace-custom-css";
+    el.textContent = data.customCss;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, [data?.customCss]);
+
   if (error) {
     return <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-rose-600">{error}</div>;
   }

@@ -31,7 +31,9 @@ export const api = {
   getProjects: () => request("/projects"),
   createProject: (body) => request("/projects", { method: "POST", body: JSON.stringify(body) }),
   updateProject: (id, body) => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  deleteProject: (id) => request(`/projects/${id}`, { method: "DELETE" }),
   getProjectAnalytics: (id) => request(`/projects/${id}/analytics`),
+  regenProjectApiKey: (id) => request(`/projects/${id}/regen-api-key`, { method: "POST" }),
   getProjectFeedback: (projectId, params = {}) => {
     const query = new URLSearchParams(params).toString();
     return request(`/feedback/project/${projectId}${query ? `?${query}` : ""}`);
@@ -43,5 +45,23 @@ export const api = {
   trackPublicOpen: (slug, body) => request(`/public/${slug}/track-open`, { method: "POST", body: JSON.stringify(body) }),
   submitFeedback: (slug, body) => request(`/feedback/${slug}`, { method: "POST", body: JSON.stringify(body) }),
   signPublicUpload: (body) => request("/uploads/public/sign", { method: "POST", body: JSON.stringify(body) }),
-  signPrivateUpload: (body) => request("/uploads/sign", { method: "POST", body: JSON.stringify(body) })
+  signPrivateUpload: (body) => request("/uploads/sign", { method: "POST", body: JSON.stringify(body) }),
+  // AI
+  aiSummarize: (projectId) => request(`/ai/projects/${projectId}/summarize`),
+  aiHighlights: (projectId) => request(`/ai/projects/${projectId}/highlights`),
+  aiSentiment: (projectId) => request(`/ai/projects/${projectId}/sentiment`),
+  // Billing
+  getSubscription: () => request("/billing/subscription"),
+  createCheckoutSession: (body) => request("/billing/checkout", { method: "POST", body: JSON.stringify(body) }),
+  cancelSubscription: () => request("/billing/cancel", { method: "POST" }),
+  // Webhooks
+  getWebhooks: (projectId) => request(`/projects/${projectId}/webhooks`),
+  createWebhook: (projectId, body) => request(`/projects/${projectId}/webhooks`, { method: "POST", body: JSON.stringify(body) }),
+  deleteWebhook: (projectId, webhookId) => request(`/projects/${projectId}/webhooks/${webhookId}`, { method: "DELETE" }),
+  testWebhook: (projectId, webhookId) => request(`/projects/${projectId}/webhooks/${webhookId}/test`, { method: "POST" }),
+  // Team
+  getTeamMembers: (projectId) => request(`/projects/${projectId}/team`),
+  inviteTeamMember: (projectId, body) => request(`/projects/${projectId}/team/invite`, { method: "POST", body: JSON.stringify(body) }),
+  removeTeamMember: (projectId, memberId) => request(`/projects/${projectId}/team/${memberId}`, { method: "DELETE" }),
+  acceptTeamInvite: (token) => request(`/projects/team/accept/${token}`, { method: "POST" })
 };

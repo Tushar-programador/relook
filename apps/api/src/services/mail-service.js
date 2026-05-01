@@ -61,3 +61,31 @@ export async function sendOtpEmail({ to, otp, purpose }) {
     html
   });
 }
+
+export async function sendInviteEmail({ to, projectName, role, acceptUrl }) {
+  const transporter = getTransporter();
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+      <h2 style="margin: 0 0 12px;">You've been invited to a FeedSpace project</h2>
+      <p style="margin: 0 0 8px;">You've been added as a <strong>${role}</strong> on the project <strong>${projectName}</strong>.</p>
+      <p style="margin: 0 0 16px;">Click the link below to accept the invitation and access the project:</p>
+      <a href="${acceptUrl}" style="display:inline-block;padding:10px 20px;background:#0f766e;color:#fff;border-radius:6px;text-decoration:none;font-weight:600;">
+        Accept Invitation
+      </a>
+      <p style="margin: 16px 0 0; font-size: 12px; color: #64748b;">If you did not expect this invitation, you can ignore this email.</p>
+    </div>
+  `;
+
+  if (!transporter) {
+    logger.warn("SMTP is not configured. Invite email not sent.", { to, projectName });
+    return;
+  }
+
+  await transporter.sendMail({
+    from: getFromAddress(),
+    to,
+    subject: `You've been invited to "${projectName}" on FeedSpace`,
+    html
+  });
+}

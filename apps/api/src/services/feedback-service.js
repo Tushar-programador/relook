@@ -5,6 +5,7 @@ import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
 import { UserModel } from "../models/user-model.js";
 import { ApiError } from "../utils/api-error.js";
+import { dispatchWebhookEvent } from "./webhook-service.js";
 
 // Per-plan monthly response caps (Infinity = unlimited)
 const MONTHLY_RESPONSE_LIMITS = { free: 50, pro: Infinity, business: Infinity };
@@ -63,6 +64,14 @@ export async function submitFeedback(projectSlug, input) {
     name: input.name || "Anonymous",
     email: input.email || "",
     metadata: input.metadata || undefined
+  });
+
+  // Fire-and-forget: dispatch webhook event to any registered webhooks
+  dispatchWebhookEvent(project._id, "feedback.submitted", {
+    feedbackId: feedback._id,
+    type: feedback.type,
+    name: feedback.name,
+    projectSlug: project.slug
   });
 
   return feedback;
@@ -129,6 +138,16 @@ export async function updateFeedbackStatus(userId, feedbackId, status) {
   feedback.status = status;
   await feedback.save();
 
+  // Fire-and-forget webhook for approved/rejected status changes
+  if (status === "approved" || status === "rejected") {
+    dispatchWebhookEvent(feedback.projectId, `feedback.${status}`, {
+      feedbackId: feedback._id,
+      type: feedback.type,
+      name: feedback.name,
+      status
+    });
+  }
+
   return feedback;
 }
 
@@ -167,7 +186,8 @@ export async function getApprovedFeedback(projectSlug) {
   return {
     project,
     items,
-    showBranding
+    showBranding,
+    customCss: project.customCss || ""
   };
 }
 

@@ -5,6 +5,7 @@ import { AboutPage } from "./pages/about-page.jsx";
 import { AuthPage } from "./pages/auth-page.jsx";
 import { DashboardPage } from "./pages/dashboard-page.jsx";
 import { FeaturesPage } from "./pages/features-page.jsx";
+import { FloatingWidgetPage } from "./pages/floating-widget-page.jsx";
 import { HelpPage } from "./pages/help-page.jsx";
 import { HomePage } from "./pages/home-page.jsx";
 import { ContactPage } from "./pages/contact-page.jsx";
@@ -17,6 +18,7 @@ import { ReviewSpotlightPage } from "./pages/review-spotlight-page.jsx";
 import { VerifyEmailPage } from "./pages/verify-email-page.jsx";
 import { WallOfLovePage } from "./pages/wall-of-love-page.jsx";
 import { WidgetPage } from "./pages/widget-page.jsx";
+import { AcceptInvitePage } from "./pages/accept-invite-page.jsx";
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
@@ -77,6 +79,15 @@ export default function App() {
       <Route path="/spotlight/:slug/:feedbackId" element={<ReviewSpotlightPage />} />
       <Route path="/wall/:slug" element={<WallOfLovePage />} />
       <Route path="/widget/:slug" element={<WidgetPage />} />
+      <Route path="/floating/:slug" element={<FloatingWidgetPage />} />
+      <Route
+        path="/team/accept/:token"
+        element={
+          <ProtectedRoute>
+            <AcceptInvitePage />
+          </ProtectedRoute>
+        }
+      />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
