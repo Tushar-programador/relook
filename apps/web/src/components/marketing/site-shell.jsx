@@ -1,6 +1,7 @@
 import { Menu, Sparkles, X } from "lucide-react";
 import { useState } from "react";
 import { Link, NavLink } from "react-router-dom";
+import { useAuth } from "../../context/auth-context.jsx";
 import { Button } from "../ui/button.jsx";
 
 const navigation = [
@@ -12,6 +13,7 @@ const navigation = [
 
 export function SiteShell({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user } = useAuth();
 
   return (
     <div className="min-h-screen px-4 py-5 md:px-8">
@@ -45,12 +47,20 @@ export function SiteShell({ children }) {
             </nav>
 
             <div className="hidden items-center gap-3 lg:flex">
-              <Button asChild variant="secondary">
-                <Link to="/login">Log in</Link>
-              </Button>
-              <Button asChild>
-                <Link to="/register">Start free</Link>
-              </Button>
+              {user ? (
+                <Button asChild>
+                  <Link to="/dashboard">Dashboard</Link>
+                </Button>
+              ) : (
+                <>
+                  <Button asChild variant="secondary">
+                    <Link to="/login">Log in</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to="/register">Start free</Link>
+                  </Button>
+                </>
+              )}
             </div>
 
             <button
@@ -80,16 +90,20 @@ export function SiteShell({ children }) {
                 </NavLink>
               ))}
               <div className="grid gap-2 pt-2 sm:grid-cols-2">
-                <Button asChild variant="secondary">
-                  <Link to="/login" onClick={() => setMenuOpen(false)}>
-                    Log in
-                  </Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/register" onClick={() => setMenuOpen(false)}>
-                    Start free
-                  </Link>
-                </Button>
+                {user ? (
+                  <Button asChild className="sm:col-span-2">
+                    <Link to="/dashboard" onClick={() => setMenuOpen(false)}>Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button asChild variant="secondary">
+                      <Link to="/login" onClick={() => setMenuOpen(false)}>Log in</Link>
+                    </Button>
+                    <Button asChild>
+                      <Link to="/register" onClick={() => setMenuOpen(false)}>Start free</Link>
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}

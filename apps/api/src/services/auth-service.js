@@ -41,14 +41,14 @@ async function setAndSendOtp(user, purpose) {
   return expiresAt;
 }
 
-export async function registerUser({ email, password }) {
+export async function registerUser({ name, email, password }) {
   const existingUser = await UserModel.findOne({ email });
   if (existingUser) {
     throw new ApiError(409, "Email already in use");
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  const user = await UserModel.create({ email, passwordHash });
+  const user = await UserModel.create({ name, email, passwordHash });
   await setAndSendOtp(user, "email-verification");
 
   return {
@@ -129,7 +129,9 @@ export async function verifyEmailOtp({ email, otp }) {
   await user.save();
 
   return {
-    message: "Email verified successfully"
+    message: "Email verified successfully",
+    token: signToken(user._id),
+    user
   };
 }
 

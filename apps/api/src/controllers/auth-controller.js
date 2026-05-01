@@ -9,6 +9,18 @@ import {
 } from "../services/auth-service.js";
 import { sendSuccess } from "../utils/api-response.js";
 
+export const registerSchema = z
+  .object({
+    name: z.string().min(2, "Name must be at least 2 characters").max(50, "Name must be at most 50 characters").trim(),
+    email: z.email(),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string()
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"]
+  });
+
 export const authSchema = z.object({
   email: z.email(),
   password: z.string().min(8, "Password must be at least 8 characters")
