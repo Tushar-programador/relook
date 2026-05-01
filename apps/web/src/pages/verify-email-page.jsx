@@ -25,7 +25,7 @@ export function VerifyEmailPage() {
 
     try {
       await verifyEmail(form);
-      navigate("/dashboard", { replace: true });
+      navigate("/", { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
