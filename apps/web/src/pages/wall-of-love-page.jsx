@@ -95,6 +95,20 @@ export function WallOfLovePage() {
             ))}
           </div>
         )}
+
+        {data?.showBranding && (
+          <div className="flex items-center justify-center gap-1.5 text-xs text-slate-400">
+            Powered by{" "}
+            <a
+              href="https://feedspace.app"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-slate-500 hover:text-primary"
+            >
+              FeedSpace
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

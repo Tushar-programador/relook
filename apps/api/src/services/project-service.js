@@ -3,8 +3,11 @@ import { FeedbackModel } from "../models/feedback-model.js";
 import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
 import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
+import { UserModel } from "../models/user-model.js";
 import { ApiError } from "../utils/api-error.js";
 import { createSlug } from "../utils/slugify.js";
+
+const PROJECT_LIMITS = { free: 1, pro: 5, business: Infinity };
 
 function makeLastNDaysLabels(days) {
   const labels = [];
@@ -32,6 +35,20 @@ async function ensureSlugAvailability(slug, excludedId = null) {
 }
 
 export async function createProject(userId, input) {
+  const user = await UserModel.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const maxProjects = PROJECT_LIMITS[user.plan] ?? 1;
+  if (maxProjects !== Infinity) {
+    const existing = await ProjectModel.countDocuments({ userId });
+    if (existing >= maxProjects) {
+      throw new ApiError(
+        403,
+        `Your ${user.plan} plan allows a maximum of ${maxProjects} project${maxProjects === 1 ? "" : "s"}. Upgrade to create more.`
+      );
+    }
+  }
+
   const slug = createSlug(input.slug || input.name);
   await ensureSlugAvailability(slug);
 

@@ -3,7 +3,13 @@ import { FeedbackModel } from "../models/feedback-model.js";
 import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
 import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
+import { UserModel } from "../models/user-model.js";
 import { ApiError } from "../utils/api-error.js";
+
+// Per-plan monthly response caps (Infinity = unlimited)
+const MONTHLY_RESPONSE_LIMITS = { free: 50, pro: Infinity, business: Infinity };
+// Per-plan max video duration in seconds
+const VIDEO_DURATION_LIMITS = { free: 30, pro: 60, business: 120 };
 
 export async function submitFeedback(projectSlug, input) {
   const project = await ProjectModel.findOne({ slug: projectSlug });
@@ -13,6 +19,39 @@ export async function submitFeedback(projectSlug, input) {
 
   if (input.type !== "text" && !input.mediaUrl) {
     throw new ApiError(400, "mediaUrl is required for audio and video feedback");
+  }
+
+  // Fetch the project owner to apply plan-based limits
+  const owner = await UserModel.findById(project.userId).lean();
+  const plan = owner?.plan || "free";
+
+  // Enforce monthly response cap
+  const monthlyLimit = MONTHLY_RESPONSE_LIMITS[plan] ?? 50;
+  if (monthlyLimit !== Infinity) {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const countThisMonth = await FeedbackModel.countDocuments({
+      projectId: project._id,
+      createdAt: { $gte: monthStart }
+    });
+    if (countThisMonth >= monthlyLimit) {
+      throw new ApiError(
+        429,
+        `This project has reached its ${monthlyLimit} feedback submissions limit for this month. The owner can upgrade their plan for unlimited responses.`
+      );
+    }
+  }
+
+  // Enforce video duration limit
+  if (input.type === "video" && typeof input.metadata?.durationSeconds === "number") {
+    const maxSeconds = VIDEO_DURATION_LIMITS[plan] ?? 30;
+    if (input.metadata.durationSeconds > maxSeconds) {
+      throw new ApiError(
+        400,
+        `Video exceeds the ${maxSeconds}-second limit for this project's plan.`
+      );
+    }
   }
 
   const feedback = await FeedbackModel.create({
@@ -121,9 +160,14 @@ export async function getApprovedFeedback(projectSlug) {
     .limit(50)
     .lean();
 
+  // Determine whether FeedSpace branding should be shown (free plan = yes)
+  const owner = await UserModel.findById(project.userId).lean();
+  const showBranding = !owner || owner.plan === "free";
+
   return {
     project,
-    items
+    items,
+    showBranding
   };
 }
 
