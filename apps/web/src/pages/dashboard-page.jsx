@@ -8,17 +8,18 @@ import { StatsCard } from "../components/dashboard/stats-card.jsx";
 import { UpgradePlansModal } from "../components/dashboard/upgrade-plans-modal.jsx";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardDescription, CardTitle } from "../components/ui/card.jsx";
+import { useAuth } from "../context/auth-context.jsx";
 import { api } from "../lib/api";
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showUpgrade, setShowUpgrade] = useState(false);
 
-  // TODO: replace "free" with real plan from user object once backend supports it
-  const currentPlan = "free";
+  const currentPlan = user?.plan ?? "free";
 
   async function loadProjects() {
     try {

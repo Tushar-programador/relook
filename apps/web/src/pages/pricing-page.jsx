@@ -2,9 +2,11 @@ import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Check, HelpCircle, Minus, Sparkles, Zap } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { SiteShell } from "../components/marketing/site-shell.jsx";
 import { Button } from "../components/ui/button.jsx";
+import { useAuth } from "../context/auth-context.jsx";
+import { api } from "../lib/api";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -176,6 +178,35 @@ function useGsapReveal(stagger = 0.12) {
 /* ─────────────────────────────── page ── */
 export function PricingPage() {
   const [yearly, setYearly] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState("");
+  const [checkoutError, setCheckoutError] = useState("");
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  async function handlePlanCta(planKey) {
+    if (planKey === "free") {
+      navigate(user ? "/dashboard" : "/register");
+      return;
+    }
+    if (!user) {
+      navigate("/login", { state: { from: location } });
+      return;
+    }
+    setCheckoutError("");
+    setCheckoutLoading(planKey);
+    try {
+      const { url } = await api.createCheckoutSession({
+        plan: planKey,
+        successUrl: `${window.location.origin}/dashboard?checkout=success`,
+        cancelUrl: `${window.location.origin}/pricing`
+      });
+      window.location.href = url;
+    } catch (err) {
+      setCheckoutError(err.message);
+      setCheckoutLoading("");
+    }
+  }
 
   const heroRef    = useRef(null);
   const cardsRef   = useGsapReveal(0.15);
@@ -261,10 +292,14 @@ export function PricingPage() {
         </section>
 
         {/* ── Plan cards ── */}
+        {checkoutError && (
+          <p className="text-center text-sm text-rose-600">{checkoutError}</p>
+        )}
         <div ref={cardsRef} className="grid gap-6 xl:grid-cols-3">
           {plans.map((plan, i) => {
             const dark = i === 1;
             const price = yearly ? plan.yearly : plan.monthly;
+            const planKey = plan.name.toLowerCase();
 
             return (
               <TiltCard
@@ -320,11 +355,12 @@ export function PricingPage() {
 
                 <div className="mt-8">
                   <Button
-                    asChild
                     className={`w-full ${dark ? "bg-white text-slate-950 hover:bg-white/90" : ""}`}
                     variant={dark ? "primary" : "secondary"}
+                    onClick={() => handlePlanCta(planKey)}
+                    disabled={checkoutLoading === planKey}
                   >
-                    <Link to={plan.monthly === 0 ? "/register" : "/register"}>{plan.cta}</Link>
+                    {checkoutLoading === planKey ? "Redirecting…" : plan.cta}
                   </Button>
                 </div>
               </TiltCard>

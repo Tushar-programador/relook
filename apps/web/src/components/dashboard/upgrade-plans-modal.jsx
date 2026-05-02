@@ -1,5 +1,6 @@
 import { Check, Minus, X, Zap } from "lucide-react";
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { api } from "../../lib/api";
 
 /* ── plan data ─────────────────────────────────── */
 
@@ -99,6 +100,25 @@ function Cell({ val }) {
 /* ── modal ─────────────────────────────────────── */
 
 export function UpgradePlansModal({ currentPlan = "free", onClose }) {
+  const [loading, setLoading] = useState("");
+  const [error, setError] = useState("");
+
+  async function handleUpgrade(planKey) {
+    setError("");
+    setLoading(planKey);
+    try {
+      const { url } = await api.createCheckoutSession({
+        plan: planKey,
+        successUrl: `${window.location.origin}/dashboard?checkout=success`,
+        cancelUrl: `${window.location.origin}/dashboard`
+      });
+      window.location.href = url;
+    } catch (err) {
+      setError(err.message);
+      setLoading("");
+    }
+  }
+
   return (
     /* backdrop */
     <div
@@ -125,6 +145,7 @@ export function UpgradePlansModal({ currentPlan = "free", onClose }) {
         </div>
 
         <div className="p-8 space-y-8">
+          {error && <p className="text-sm text-rose-600 -mb-4">{error}</p>}
           {/* plan cards */}
           <div className="grid gap-5 md:grid-cols-3">
             {PLANS.map((plan) => (
@@ -166,18 +187,19 @@ export function UpgradePlansModal({ currentPlan = "free", onClose }) {
                       {plan.cta}
                     </div>
                   ) : (
-                    <Link
-                      to="/pricing"
-                      onClick={onClose}
-                      className={`flex items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition
+                    <button
+                      type="button"
+                      onClick={() => handleUpgrade(plan.key)}
+                      disabled={loading === plan.key}
+                      className={`flex w-full items-center justify-center gap-2 rounded-full py-2.5 text-sm font-semibold transition disabled:opacity-60
                         ${plan.key === "pro"
                           ? "bg-primary text-white hover:bg-primary/90"
                           : "bg-violet-600 text-white hover:bg-violet-700"
                         }`}
                     >
                       <Zap className="h-3.5 w-3.5" />
-                      {plan.cta}
-                    </Link>
+                      {loading === plan.key ? "Redirecting…" : plan.cta}
+                    </button>
                   )}
                 </div>
               </div>
@@ -217,14 +239,15 @@ export function UpgradePlansModal({ currentPlan = "free", onClose }) {
               <p className="font-semibold text-white">7-day Pro trial — no card required.</p>
               <p className="text-sm text-slate-400 mt-0.5">Try every Pro feature free for a week. Cancel any time.</p>
             </div>
-            <Link
-              to="/pricing"
-              onClick={onClose}
-              className="flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition"
+            <button
+              type="button"
+              onClick={() => handleUpgrade("pro")}
+              disabled={loading === "pro"}
+              className="flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white hover:bg-primary/90 transition disabled:opacity-60"
             >
               <Zap className="h-4 w-4" />
-              Start free trial
-            </Link>
+              {loading === "pro" ? "Redirecting…" : "Start free trial"}
+            </button>
           </div>
         </div>
       </div>
