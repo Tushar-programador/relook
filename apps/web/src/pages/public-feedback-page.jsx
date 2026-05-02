@@ -22,6 +22,17 @@ function getOrCreateVisitorId() {
   return created;
 }
 
+async function getFileDuration(file) {
+  return new Promise((resolve) => {
+    const tag = file.type.startsWith("video") ? "video" : "audio";
+    const el = document.createElement(tag);
+    el.preload = "metadata";
+    el.onloadedmetadata = () => { URL.revokeObjectURL(el.src); resolve(el.duration); };
+    el.onerror = () => resolve(0);
+    el.src = URL.createObjectURL(file);
+  });
+}
+
 async function uploadToCloudinary(uploadParams, file, setProgress) {
   const formData = new FormData();
   formData.append("file", file);
@@ -82,6 +93,15 @@ export function PublicFeedbackPage() {
   }, [slug]);
 
   useEffect(() => {
+    if (!pageData?.customCss) return;
+    const el = document.createElement("style");
+    el.id = "feedspace-custom-css";
+    el.textContent = pageData.customCss;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, [pageData?.customCss]);
+
+  useEffect(() => {
     setSelectedFile(null);
     setRecordedFile(null);
     setProgress(0);
@@ -101,12 +121,25 @@ export function PublicFeedbackPage() {
     setStatusMessage("");
 
     try {
+      if (!form.email.trim()) {
+        throw new Error("Email address is required.");
+      }
+
       let mediaUrl = "";
       const file = recordedFile || selectedFile;
 
       if (type !== "text") {
         if (!file) {
           throw new Error("Add or record a media file before submitting.");
+        }
+
+        // Validate duration before upload
+        const mediaDurationLimit = pageData?.mediaDurationLimit ?? 10;
+        const duration = await getFileDuration(file);
+        if (duration > 0 && duration > mediaDurationLimit) {
+          throw new Error(
+            `Your ${type} exceeds the ${mediaDurationLimit}-second limit. Please trim it and try again.`
+          );
         }
 
         const signed = await api.signPublicUpload({
@@ -121,7 +154,7 @@ export function PublicFeedbackPage() {
       const payload = {
         type,
         ...(form.name.trim() ? { name: form.name.trim() } : {}),
-        ...(form.email.trim() ? { email: form.email.trim() } : {}),
+        email: form.email.trim(),
         ...(form.message.trim() ? { message: form.message.trim() } : {}),
         ...(mediaUrl ? { mediaUrl } : {})
       };
@@ -141,6 +174,7 @@ export function PublicFeedbackPage() {
   }
 
   const project = pageData?.project;
+  const mediaDurationLimit = pageData?.mediaDurationLimit ?? 10;
   const hasSubmitted = Boolean(statusMessage);
 
   function handleSubmitAnother() {
@@ -243,7 +277,8 @@ export function PublicFeedbackPage() {
                 />
                 <Input
                   type="email"
-                  placeholder="Email (optional)"
+                  placeholder="Email address *"
+                  required
                   value={form.email}
                   onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
                 />
@@ -257,7 +292,7 @@ export function PublicFeedbackPage() {
 
               {type !== "text" && (
                 <div className="space-y-4">
-                  <MediaRecorderPanel mode={type} onBlobReady={handleRecordedBlob} />
+                  <MediaRecorderPanel mode={type} onBlobReady={handleRecordedBlob} maxSeconds={mediaDurationLimit} />
 
                   <div className="rounded-[28px] border border-dashed border-border bg-white/65 p-5">
                     <label className="flex cursor-pointer flex-col items-center justify-center gap-3 text-center text-sm text-slate-600">
@@ -300,6 +335,20 @@ export function PublicFeedbackPage() {
             </div>
           </Card>
         </div>
+
+        {pageData?.showBranding && (
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+            Powered by{" "}
+            <a
+              href="https://feedspace.app"
+              target="_blank"
+              rel="noreferrer"
+              className="font-semibold text-slate-500 hover:text-primary"
+            >
+              FeedSpace
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );

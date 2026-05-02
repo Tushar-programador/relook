@@ -2,17 +2,24 @@ import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { AppShell } from "../components/layout/app-shell.jsx";
 import { CreateProjectModal } from "../components/dashboard/create-project-modal.jsx";
+import { PlanBanner } from "../components/dashboard/plan-banner.jsx";
 import { ProjectCard } from "../components/dashboard/project-card.jsx";
 import { StatsCard } from "../components/dashboard/stats-card.jsx";
+import { UpgradePlansModal } from "../components/dashboard/upgrade-plans-modal.jsx";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardDescription, CardTitle } from "../components/ui/card.jsx";
+import { useAuth } from "../context/auth-context.jsx";
 import { api } from "../lib/api";
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showUpgrade, setShowUpgrade] = useState(false);
+
+  const currentPlan = user?.plan ?? "free";
 
   async function loadProjects() {
     try {
@@ -49,6 +56,13 @@ export function DashboardPage() {
   return (
     <AppShell>
       <div className="space-y-6">
+        <PlanBanner
+          plan={currentPlan}
+          projectsUsed={totals.projects}
+          responsesUsed={totals.feedback}
+          onUpgradeClick={() => setShowUpgrade(true)}
+        />
+
         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           <StatsCard label="Projects" value={totals.projects} accent="#0f766e" />
           <StatsCard label="Total feedback" value={totals.feedback} accent="#ea580c" />
@@ -93,6 +107,10 @@ export function DashboardPage() {
 
       {showModal && (
         <CreateProjectModal onClose={() => setShowModal(false)} onCreated={handleCreated} />
+      )}
+
+      {showUpgrade && (
+        <UpgradePlansModal currentPlan={currentPlan} onClose={() => setShowUpgrade(false)} />
       )}
     </AppShell>
   );

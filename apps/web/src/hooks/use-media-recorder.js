@@ -1,14 +1,18 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 
 export function useMediaRecorder() {
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
+  const autoStopTimerRef = useRef(null);
+  const elapsedIntervalRef = useRef(null);
   const [liveStream, setLiveStream] = useState(null);
   const [status, setStatus] = useState("idle");
   const [blob, setBlob] = useState(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [error, setError] = useState("");
+  const [elapsed, setElapsed] = useState(0);
+  const [maxSeconds, setMaxSeconds] = useState(null);
 
   useEffect(() => {
     return () => {
@@ -18,14 +22,17 @@ export function useMediaRecorder() {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
       }
+      clearTimeout(autoStopTimerRef.current);
+      clearInterval(elapsedIntervalRef.current);
       setLiveStream(null);
     };
   }, [previewUrl]);
 
-  async function start(kind) {
+  async function start(kind, options = {}) {
     try {
       setError("");
       setBlob(null);
+      setElapsed(0);
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
         setPreviewUrl("");
@@ -40,7 +47,19 @@ export function useMediaRecorder() {
       setLiveStream(stream);
       chunksRef.current = [];
 
-      const mediaRecorder = new MediaRecorder(stream);
+      const limit = options.maxSeconds ?? null;
+      setMaxSeconds(limit);
+
+      // Build MediaRecorder options with compression bitrates
+      const recorderOptions = {};
+      if (kind === "video" && options.videoBitsPerSecond) {
+        recorderOptions.videoBitsPerSecond = options.videoBitsPerSecond;
+      }
+      if (options.audioBitsPerSecond) {
+        recorderOptions.audioBitsPerSecond = options.audioBitsPerSecond;
+      }
+
+      const mediaRecorder = new MediaRecorder(stream, recorderOptions);
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (event) => {
@@ -50,6 +69,9 @@ export function useMediaRecorder() {
       };
 
       mediaRecorder.onstop = () => {
+        clearTimeout(autoStopTimerRef.current);
+        clearInterval(elapsedIntervalRef.current);
+
         const recordedBlob = new Blob(chunksRef.current, {
           type: kind === "video" ? "video/webm" : "audio/webm"
         });
@@ -65,6 +87,20 @@ export function useMediaRecorder() {
 
       mediaRecorder.start();
       setStatus("recording");
+
+      // Elapsed counter
+      elapsedIntervalRef.current = setInterval(() => {
+        setElapsed((prev) => prev + 1);
+      }, 1000);
+
+      // Auto-stop at limit
+      if (limit) {
+        autoStopTimerRef.current = setTimeout(() => {
+          if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+            mediaRecorderRef.current.stop();
+          }
+        }, limit * 1000);
+      }
     } catch (err) {
       setError(err.message || "Unable to start recording");
       setLiveStream(null);
@@ -79,6 +115,8 @@ export function useMediaRecorder() {
   }
 
   function reset() {
+    clearTimeout(autoStopTimerRef.current);
+    clearInterval(elapsedIntervalRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
@@ -91,6 +129,8 @@ export function useMediaRecorder() {
     setBlob(null);
     setError("");
     setStatus("idle");
+    setElapsed(0);
+    setMaxSeconds(null);
   }
 
   return {
@@ -99,6 +139,8 @@ export function useMediaRecorder() {
     blob,
     previewUrl,
     error,
+    elapsed,
+    maxSeconds,
     start,
     stop,
     reset

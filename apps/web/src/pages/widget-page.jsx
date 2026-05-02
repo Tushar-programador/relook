@@ -17,6 +17,16 @@ export function WidgetPage() {
       .catch((err) => setError(err.message));
   }, [slug]);
 
+  // Inject project-level custom CSS when available
+  useEffect(() => {
+    if (!data?.customCss) return;
+    const el = document.createElement("style");
+    el.id = "feedspace-custom-css";
+    el.textContent = data.customCss;
+    document.head.appendChild(el);
+    return () => el.remove();
+  }, [data?.customCss]);
+
   if (error) {
     return <div className="flex min-h-screen items-center justify-center text-sm text-rose-600">{error}</div>;
   }
@@ -47,6 +57,20 @@ export function WidgetPage() {
           </Card>
         ))}
       </div>
+
+      {data?.showBranding && (
+        <div className="mt-6 flex items-center justify-center gap-1.5 text-xs text-slate-400">
+          Powered by{" "}
+          <a
+            href="https://feedspace.app"
+            target="_blank"
+            rel="noreferrer"
+            className="font-semibold text-slate-500 hover:text-primary"
+          >
+            FeedSpace
+          </a>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,14 @@
+import crypto from "crypto";
 import mongoose from "mongoose";
 import { FeedbackModel } from "../models/feedback-model.js";
 import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
 import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
+import { UserModel } from "../models/user-model.js";
 import { ApiError } from "../utils/api-error.js";
 import { createSlug } from "../utils/slugify.js";
+
+const PROJECT_LIMITS = { free: 1, pro: 5, business: Infinity };
 
 function makeLastNDaysLabels(days) {
   const labels = [];
@@ -32,6 +36,20 @@ async function ensureSlugAvailability(slug, excludedId = null) {
 }
 
 export async function createProject(userId, input) {
+  const user = await UserModel.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const maxProjects = PROJECT_LIMITS[user.plan] ?? 1;
+  if (maxProjects !== Infinity) {
+    const existing = await ProjectModel.countDocuments({ userId });
+    if (existing >= maxProjects) {
+      throw new ApiError(
+        403,
+        `Your ${user.plan} plan allows a maximum of ${maxProjects} project${maxProjects === 1 ? "" : "s"}. Upgrade to create more.`
+      );
+    }
+  }
+
   const slug = createSlug(input.slug || input.name);
   await ensureSlugAvailability(slug);
 
@@ -45,7 +63,8 @@ export async function createProject(userId, input) {
     website: input.website || "",
     description: input.description || "",
     logo: input.logo || "",
-    theme: input.theme || undefined
+    theme: input.theme || undefined,
+    apiKey: crypto.randomUUID()
   });
 }
 
@@ -156,8 +175,19 @@ export async function updateProject(userId, projectId, input) {
     };
   }
 
+  if (typeof input.customCss === "string") {
+    project.customCss = input.customCss;
+  }
+
   await project.save();
   return project;
+}
+
+export async function regenProjectApiKey(userId, projectId) {
+  const project = await getProjectById(userId, projectId);
+  project.apiKey = crypto.randomUUID();
+  await project.save();
+  return { apiKey: project.apiKey };
 }
 
 export async function deleteProject(userId, projectId) {

@@ -4,6 +4,7 @@ import {
   deleteProject,
   getProjectAnalytics,
   listProjects,
+  regenProjectApiKey,
   updateProject
 } from "../services/project-service.js";
 import { sendSuccess } from "../utils/api-response.js";
@@ -25,7 +26,8 @@ export const createProjectSchema = z.object({
       primaryColor: z.string().optional(),
       accentColor: z.string().optional()
     })
-    .optional()
+    .optional(),
+  customCss: z.string().max(10000).optional()
 });
 
 export const updateProjectSchema = createProjectSchema.partial();
@@ -52,5 +54,10 @@ export async function remove(req, res) {
 
 export async function analytics(req, res) {
   const data = await getProjectAnalytics(req.user._id, req.params.id);
+  return sendSuccess(res, data);
+}
+
+export async function regenApiKey(req, res) {
+  const data = await regenProjectApiKey(req.user._id, req.params.id);
   return sendSuccess(res, data);
 }

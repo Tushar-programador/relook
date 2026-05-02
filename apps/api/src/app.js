@@ -19,6 +19,11 @@ export function createApp() {
   // Temporary: allow all origins while debugging CORS issues.
   app.use(cors());
   app.use(helmet());
+
+  // Stripe webhook requires the raw request body for signature verification.
+  // This route must be registered BEFORE express.json() consumes the body.
+  app.use("/api/billing/webhook", express.raw({ type: "application/json" }));
+
   app.use(express.json({ limit: "2mb" }));
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());

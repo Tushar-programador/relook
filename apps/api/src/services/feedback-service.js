@@ -3,7 +3,14 @@ import { FeedbackModel } from "../models/feedback-model.js";
 import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
 import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
+import { UserModel } from "../models/user-model.js";
 import { ApiError } from "../utils/api-error.js";
+import { dispatchWebhookEvent } from "./webhook-service.js";
+
+// Per-plan monthly response caps (Infinity = unlimited)
+const MONTHLY_RESPONSE_LIMITS = { free: 50, pro: Infinity, business: Infinity };
+// Per-plan max media duration in seconds (video and audio)
+const MEDIA_DURATION_LIMITS = { free: 10, pro: 30, business: 60 };
 
 export async function submitFeedback(projectSlug, input) {
   const project = await ProjectModel.findOne({ slug: projectSlug });
@@ -15,6 +22,39 @@ export async function submitFeedback(projectSlug, input) {
     throw new ApiError(400, "mediaUrl is required for audio and video feedback");
   }
 
+  // Fetch the project owner to apply plan-based limits
+  const owner = await UserModel.findById(project.userId).lean();
+  const plan = owner?.plan || "free";
+
+  // Enforce monthly response cap
+  const monthlyLimit = MONTHLY_RESPONSE_LIMITS[plan] ?? 50;
+  if (monthlyLimit !== Infinity) {
+    const monthStart = new Date();
+    monthStart.setDate(1);
+    monthStart.setHours(0, 0, 0, 0);
+    const countThisMonth = await FeedbackModel.countDocuments({
+      projectId: project._id,
+      createdAt: { $gte: monthStart }
+    });
+    if (countThisMonth >= monthlyLimit) {
+      throw new ApiError(
+        429,
+        `This project has reached its ${monthlyLimit} feedback submissions limit for this month. The owner can upgrade their plan for unlimited responses.`
+      );
+    }
+  }
+
+  // Enforce media duration limit (video and audio)
+  if ((input.type === "video" || input.type === "audio") && typeof input.metadata?.durationSeconds === "number") {
+    const maxSeconds = MEDIA_DURATION_LIMITS[plan] ?? 10;
+    if (input.metadata.durationSeconds > maxSeconds) {
+      throw new ApiError(
+        400,
+        `${input.type === "video" ? "Video" : "Audio"} exceeds the ${maxSeconds}-second limit for this project's plan.`
+      );
+    }
+  }
+
   const feedback = await FeedbackModel.create({
     projectId: project._id,
     type: input.type,
@@ -24,6 +64,14 @@ export async function submitFeedback(projectSlug, input) {
     name: input.name || "Anonymous",
     email: input.email || "",
     metadata: input.metadata || undefined
+  });
+
+  // Fire-and-forget: dispatch webhook event to any registered webhooks
+  dispatchWebhookEvent(project._id, "feedback.submitted", {
+    feedbackId: feedback._id,
+    type: feedback.type,
+    name: feedback.name,
+    projectSlug: project.slug
   });
 
   return feedback;
@@ -90,6 +138,16 @@ export async function updateFeedbackStatus(userId, feedbackId, status) {
   feedback.status = status;
   await feedback.save();
 
+  // Fire-and-forget webhook for approved/rejected status changes
+  if (status === "approved" || status === "rejected") {
+    dispatchWebhookEvent(feedback.projectId, `feedback.${status}`, {
+      feedbackId: feedback._id,
+      type: feedback.type,
+      name: feedback.name,
+      status
+    });
+  }
+
   return feedback;
 }
 
@@ -121,9 +179,18 @@ export async function getApprovedFeedback(projectSlug) {
     .limit(50)
     .lean();
 
+  // Determine whether FeedSpace branding should be shown (free plan = yes)
+  const owner = await UserModel.findById(project.userId).lean();
+  const showBranding = !owner || owner.plan === "free";
+
+  const mediaDurationLimit = MEDIA_DURATION_LIMITS[owner?.plan ?? "free"] ?? 10;
+
   return {
     project,
-    items
+    items,
+    showBranding,
+    customCss: project.customCss || "",
+    mediaDurationLimit
   };
 }
 

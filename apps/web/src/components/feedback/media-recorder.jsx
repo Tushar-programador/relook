@@ -4,7 +4,7 @@ import { useMediaRecorder } from "../../hooks/use-media-recorder";
 import { Button } from "../ui/button.jsx";
 import { CardDescription } from "../ui/card.jsx";
 
-export function MediaRecorderPanel({ mode, onBlobReady }) {
+export function MediaRecorderPanel({ mode, onBlobReady, maxSeconds }) {
   const recorder = useMediaRecorder();
   const liveVideoRef = useRef(null);
 
@@ -26,7 +26,13 @@ export function MediaRecorderPanel({ mode, onBlobReady }) {
   }, [mode, onBlobReady, recorder.blob]);
 
   function handleStart() {
-    recorder.start(mode);
+    // Bitrate options scale with plan duration limit (shorter = more compressed)
+    const recorderOptions = { maxSeconds };
+    if (mode === "video") {
+      recorderOptions.videoBitsPerSecond = maxSeconds <= 10 ? 600_000 : maxSeconds <= 30 ? 1_500_000 : 2_500_000;
+    }
+    recorderOptions.audioBitsPerSecond = maxSeconds <= 10 ? 96_000 : maxSeconds <= 30 ? 128_000 : 160_000;
+    recorder.start(mode, recorderOptions);
   }
 
   const showVoiceAnimation = mode === "audio" && (recorder.status === "recording" || Boolean(recorder.previewUrl));
@@ -48,7 +54,14 @@ export function MediaRecorderPanel({ mode, onBlobReady }) {
       {mode === "video" && recorder.status === "recording" && recorder.liveStream && (
         <div className="space-y-2">
           <video ref={liveVideoRef} autoPlay muted playsInline className="w-full rounded-3xl" />
-          <p className="text-xs font-medium text-emerald-700">Recording live video...</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-emerald-700">Recording live video...</p>
+            {recorder.maxSeconds && (
+              <p className="text-xs font-semibold tabular-nums text-rose-600">
+                {Math.max(0, recorder.maxSeconds - recorder.elapsed)}s left
+              </p>
+            )}
+          </div>
         </div>
       )}
 
@@ -64,7 +77,16 @@ export function MediaRecorderPanel({ mode, onBlobReady }) {
             ))}
           </div>
           <p className="text-center text-xs font-medium text-emerald-700">
-            {recorder.status === "recording" ? "Recording voice..." : "Voice preview ready"}
+            {recorder.status === "recording" ? (
+              <span className="flex items-center justify-center gap-2">
+                Recording voice...
+                {recorder.maxSeconds && (
+                  <span className="font-semibold tabular-nums text-rose-600">
+                    {Math.max(0, recorder.maxSeconds - recorder.elapsed)}s left
+                  </span>
+                )}
+              </span>
+            ) : "Voice preview ready"}
           </p>
         </div>
       )}
