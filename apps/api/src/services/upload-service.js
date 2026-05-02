@@ -31,9 +31,13 @@ export function createSignedUploadParams({ contentType, projectSlug }) {
 
   const paramsToSign = { folder, timestamp };
 
-  // Eager transformation: auto quality + format, convert to mp4 for video
+  // Eager transformation: auto quality + format, convert to mp4 for video / mp3 for audio
   if (isVideo) {
     paramsToSign.eager = "q_auto:low,f_mp4,vc_h264";
+    paramsToSign.eager_async = "true";
+  }
+  if (isAudio) {
+    paramsToSign.eager = "q_auto:low,f_mp3";
     paramsToSign.eager_async = "true";
   }
 
@@ -47,6 +51,7 @@ export function createSignedUploadParams({ contentType, projectSlug }) {
     apiKey: env.CLOUDINARY_API_KEY,
     cloudName: env.CLOUDINARY_CLOUD_NAME,
     folder,
-    ...(isVideo ? { eager: "q_auto:low,f_mp4,vc_h264", eager_async: "true" } : {})
+    ...(isVideo ? { eager: "q_auto:low,f_mp4,vc_h264", eager_async: "true" } : {}),
+    ...(isAudio ? { eager: "q_auto:low,f_mp3", eager_async: "true" } : {})
   };
 }

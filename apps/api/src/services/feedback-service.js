@@ -9,8 +9,8 @@ import { dispatchWebhookEvent } from "./webhook-service.js";
 
 // Per-plan monthly response caps (Infinity = unlimited)
 const MONTHLY_RESPONSE_LIMITS = { free: 50, pro: Infinity, business: Infinity };
-// Per-plan max video duration in seconds
-const VIDEO_DURATION_LIMITS = { free: 30, pro: 60, business: 120 };
+// Per-plan max media duration in seconds (video and audio)
+const MEDIA_DURATION_LIMITS = { free: 10, pro: 30, business: 60 };
 
 export async function submitFeedback(projectSlug, input) {
   const project = await ProjectModel.findOne({ slug: projectSlug });
@@ -44,13 +44,13 @@ export async function submitFeedback(projectSlug, input) {
     }
   }
 
-  // Enforce video duration limit
-  if (input.type === "video" && typeof input.metadata?.durationSeconds === "number") {
-    const maxSeconds = VIDEO_DURATION_LIMITS[plan] ?? 30;
+  // Enforce media duration limit (video and audio)
+  if ((input.type === "video" || input.type === "audio") && typeof input.metadata?.durationSeconds === "number") {
+    const maxSeconds = MEDIA_DURATION_LIMITS[plan] ?? 10;
     if (input.metadata.durationSeconds > maxSeconds) {
       throw new ApiError(
         400,
-        `Video exceeds the ${maxSeconds}-second limit for this project's plan.`
+        `${input.type === "video" ? "Video" : "Audio"} exceeds the ${maxSeconds}-second limit for this project's plan.`
       );
     }
   }
@@ -183,11 +183,14 @@ export async function getApprovedFeedback(projectSlug) {
   const owner = await UserModel.findById(project.userId).lean();
   const showBranding = !owner || owner.plan === "free";
 
+  const mediaDurationLimit = MEDIA_DURATION_LIMITS[owner?.plan ?? "free"] ?? 10;
+
   return {
     project,
     items,
     showBranding,
-    customCss: project.customCss || ""
+    customCss: project.customCss || "",
+    mediaDurationLimit
   };
 }
 
