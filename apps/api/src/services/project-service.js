@@ -5,6 +5,7 @@ import { PortalOpenEventModel } from "../models/portal-open-event-model.js";
 import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
 import { UserModel } from "../models/user-model.js";
+import { isMailConfigured, sendPortalLinkEmail } from "./mail-service.js";
 import { ApiError } from "../utils/api-error.js";
 import { createSlug } from "../utils/slugify.js";
 
@@ -325,5 +326,40 @@ export async function getProjectAnalytics(userId, projectId) {
     },
     timeline,
     responders: recentResponses
+  };
+}
+
+export async function sendProjectPortalLinks(userId, projectId, input) {
+  const project = await getProjectById(userId, projectId);
+  const user = await UserModel.findById(userId).select("plan");
+
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  if (!isMailConfigured()) {
+    throw new ApiError(503, "Email service is not configured. Add SMTP settings first.");
+  }
+
+  const canRemovePromotion = user.plan !== "free";
+  const includePromotion = input.removePromotion ? !canRemovePromotion : true;
+  const portalUrl = `${input.appBaseUrl.replace(/\/$/, "")}/feedback/${project.slug}`;
+
+  await Promise.all(
+    input.recipients.map((recipient) =>
+      sendPortalLinkEmail({
+        to: recipient,
+        subject: input.subject,
+        body: input.body,
+        portalUrl,
+        includePromotion
+      })
+    )
+  );
+
+  return {
+    sent: input.recipients.length,
+    includePromotion,
+    plan: user.plan
   };
 }

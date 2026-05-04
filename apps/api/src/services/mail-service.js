@@ -31,6 +31,23 @@ function getFromAddress() {
   return `${fromName} <${env.SMTP_FROM_EMAIL}>`;
 }
 
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function nl2br(value) {
+  return escapeHtml(value).replace(/\n/g, "<br />");
+}
+
+export function isMailConfigured() {
+  return Boolean(getTransporter());
+}
+
 export async function sendOtpEmail({ to, otp, purpose }) {
   const transporter = getTransporter();
 
@@ -87,5 +104,42 @@ export async function sendInviteEmail({ to, projectName, role, acceptUrl }) {
     to,
     subject: `You've been invited to "${projectName}" on FeedSpace`,
     html
+  });
+}
+
+export async function sendPortalLinkEmail({ to, subject, body, portalUrl, includePromotion = true }) {
+  const transporter = getTransporter();
+
+  if (!transporter) {
+    logger.warn("SMTP is not configured. Portal link email not sent.", { to });
+    return;
+  }
+
+  const promotionBlock = includePromotion
+    ? `
+      <hr style="border:none;border-top:1px solid #e2e8f0;margin:20px 0;" />
+      <p style="margin:0;font-size:12px;color:#64748b;">
+        Powered by FeedSpace. Collect testimonials and customer stories in minutes.
+      </p>
+    `
+    : "";
+
+  const html = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
+      <p style="margin:0 0 14px;">${nl2br(body)}</p>
+      <p style="margin:0 0 14px;">Share feedback here:</p>
+      <p style="margin:0 0 16px;">
+        <a href="${escapeHtml(portalUrl)}" style="color:#0f766e;text-decoration:underline;word-break:break-all;">${escapeHtml(portalUrl)}</a>
+      </p>
+      ${promotionBlock}
+    </div>
+  `;
+
+  await transporter.sendMail({
+    from: getFromAddress(),
+    to,
+    subject,
+    html,
+    text: `${body}\n\nShare feedback here:\n${portalUrl}${includePromotion ? "\n\nPowered by FeedSpace. Collect testimonials and customer stories in minutes." : ""}`
   });
 }

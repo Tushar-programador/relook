@@ -15,6 +15,7 @@ import { PricingPage } from "./pages/pricing-page.jsx";
 import { ProjectPage } from "./pages/project-page.jsx";
 import { PublicFeedbackPage } from "./pages/public-feedback-page.jsx";
 import { ReviewSpotlightPage } from "./pages/review-spotlight-page.jsx";
+import { SendPortalLinkPage } from "./pages/send-portal-link-page.jsx";
 import { VerifyEmailPage } from "./pages/verify-email-page.jsx";
 import { WallOfLovePage } from "./pages/wall-of-love-page.jsx";
 import { WidgetPage } from "./pages/widget-page.jsx";
@@ -72,6 +73,14 @@ export default function App() {
         element={
           <ProtectedRoute>
             <HelpPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/send-portal-link"
+        element={
+          <ProtectedRoute>
+            <SendPortalLinkPage />
           </ProtectedRoute>
         }
       />

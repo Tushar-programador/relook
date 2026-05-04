@@ -5,6 +5,8 @@ import {
   createProjectSchema,
   list,
   regenApiKey,
+  sendPortalLink,
+  sendPortalLinkSchema,
   remove,
   update,
   updateProjectSchema
@@ -25,6 +27,7 @@ router.get("/:id/analytics", asyncHandler(analytics));
 router.patch("/:id", validate(updateProjectSchema), asyncHandler(update));
 router.delete("/:id", asyncHandler(remove));
 router.post("/:id/regen-api-key", requirePlan("business"), asyncHandler(regenApiKey));
+router.post("/:id/send-portal-link", validate(sendPortalLinkSchema), asyncHandler(sendPortalLink));
 
 // Nested sub-routers (mergeParams handled in each sub-router)
 router.use("/:projectId/team", teamRouter);

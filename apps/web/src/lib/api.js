@@ -32,6 +32,7 @@ export const api = {
   createProject: (body) => request("/projects", { method: "POST", body: JSON.stringify(body) }),
   updateProject: (id, body) => request(`/projects/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
   deleteProject: (id) => request(`/projects/${id}`, { method: "DELETE" }),
+  sendPortalLinkEmails: (id, body) => request(`/projects/${id}/send-portal-link`, { method: "POST", body: JSON.stringify(body) }),
   getProjectAnalytics: (id) => request(`/projects/${id}/analytics`),
   regenProjectApiKey: (id) => request(`/projects/${id}/regen-api-key`, { method: "POST" }),
   getProjectFeedback: (projectId, params = {}) => {

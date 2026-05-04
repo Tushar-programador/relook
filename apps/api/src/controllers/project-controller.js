@@ -5,6 +5,7 @@ import {
   getProjectAnalytics,
   listProjects,
   regenProjectApiKey,
+  sendProjectPortalLinks,
   updateProject
 } from "../services/project-service.js";
 import { sendSuccess } from "../utils/api-response.js";
@@ -31,6 +32,14 @@ export const createProjectSchema = z.object({
 });
 
 export const updateProjectSchema = createProjectSchema.partial();
+
+export const sendPortalLinkSchema = z.object({
+  recipients: z.array(z.email()).min(1).max(200),
+  subject: z.string().min(1).max(180),
+  body: z.string().min(1).max(5000),
+  removePromotion: z.boolean().optional().default(false),
+  appBaseUrl: z.string().url()
+});
 
 export async function create(req, res) {
   const project = await createProject(req.user._id, req.body);
@@ -59,5 +68,10 @@ export async function analytics(req, res) {
 
 export async function regenApiKey(req, res) {
   const data = await regenProjectApiKey(req.user._id, req.params.id);
+  return sendSuccess(res, data);
+}
+
+export async function sendPortalLink(req, res) {
+  const data = await sendProjectPortalLinks(req.user._id, req.params.id, req.body);
   return sendSuccess(res, data);
 }

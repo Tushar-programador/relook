@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CircleHelp, LayoutDashboard, LogOut, Rocket, Sparkles } from "lucide-react";
+import { CircleHelp, LayoutDashboard, LogOut, Mail, Rocket, Sparkles, Trophy } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/auth-context.jsx";
 import { api } from "../../lib/api";
@@ -20,12 +20,18 @@ const navItems = [
     to: "/pricing",
     label: "Pricing",
     icon: CircleHelp
+  },
+  {
+    to: "/send-portal-link",
+    label: "Send Portal Link",
+    icon: Mail
   }
 ];
 
 export function AppShell({ children }) {
   const { user, logout } = useAuth();
   const [portalLink, setPortalLink] = useState("/dashboard");
+  const [wallLink, setWallLink] = useState("/dashboard");
 
   useEffect(() => {
     let active = true;
@@ -39,10 +45,12 @@ export function AppShell({ children }) {
 
         const firstProjectSlug = projects?.[0]?.slug;
         setPortalLink(firstProjectSlug ? `/feedback/${firstProjectSlug}` : "/dashboard");
+        setWallLink(firstProjectSlug ? `/wall/${firstProjectSlug}` : "/dashboard");
       })
       .catch(() => {
         if (active) {
           setPortalLink("/dashboard");
+          setWallLink("/dashboard");
         }
       });
 
@@ -83,6 +91,17 @@ export function AppShell({ children }) {
                 </NavLink>
               );
             })}
+            <NavLink
+              to={wallLink}
+              className={({ isActive }) =>
+                `flex items-center gap-3 rounded-2xl px-4 py-3 text-sm no-underline transition ${
+                  isActive ? "bg-primary text-white" : "text-slate-700 hover:bg-white/80"
+                }`
+              }
+            >
+              <Trophy className="h-4 w-4" />
+              Decade Wall of Fame
+            </NavLink>
           </nav>
 
           <div className="mt-6 rounded-3xl bg-white/80 p-4">
