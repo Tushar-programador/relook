@@ -29,7 +29,9 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_PRO_PRICE_ID: z.string().optional(),
-  STRIPE_BUSINESS_PRICE_ID: z.string().optional()
+  STRIPE_BUSINESS_PRICE_ID: z.string().optional(),
+  SEND_PORTAL_LINK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+  SEND_PORTAL_LINK_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5)
 });
 
 const parsed = envSchema.safeParse(process.env);

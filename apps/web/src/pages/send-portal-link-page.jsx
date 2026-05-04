@@ -93,7 +93,7 @@ export function SendPortalLinkPage() {
       });
 
       setNotice(
-        `Sent ${result.sent} email${result.sent === 1 ? "" : "s"}.${
+        `${result.queued ? "Queued" : "Sent"} ${result.sent} email${result.sent === 1 ? "" : "s"}.${
           result.includePromotion ? " FeedSpace promotion footer included." : " Promotion footer removed."
         }`
       );

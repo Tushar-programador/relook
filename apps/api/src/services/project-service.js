@@ -6,6 +6,7 @@ import { PortalVisitModel } from "../models/portal-visit-model.js";
 import { ProjectModel } from "../models/project-model.js";
 import { UserModel } from "../models/user-model.js";
 import { isMailConfigured, sendPortalLinkEmail } from "./mail-service.js";
+import { enqueuePortalLinkEmailJob } from "./portal-link-queue-service.js";
 import { ApiError } from "../utils/api-error.js";
 import { createSlug } from "../utils/slugify.js";
 
@@ -342,24 +343,31 @@ export async function sendProjectPortalLinks(userId, projectId, input) {
   }
 
   const canRemovePromotion = user.plan !== "free";
-  const includePromotion = input.removePromotion ? !canRemovePromotion : true;
+  const includePromotion = canRemovePromotion ? !input.removePromotion : true;
   const portalUrl = `${input.appBaseUrl.replace(/\/$/, "")}/feedback/${project.slug}`;
 
-  await Promise.all(
-    input.recipients.map((recipient) =>
-      sendPortalLinkEmail({
-        to: recipient,
-        subject: input.subject,
-        body: input.body,
-        portalUrl,
-        includePromotion
-      })
-    )
-  );
+  if (input.recipients.length === 1) {
+    await sendPortalLinkEmail({
+      to: input.recipients[0],
+      subject: input.subject,
+      body: input.body,
+      portalUrl,
+      includePromotion
+    });
+  } else {
+    await enqueuePortalLinkEmailJob({
+      recipients: input.recipients,
+      subject: input.subject,
+      body: input.body,
+      portalUrl,
+      includePromotion
+    });
+  }
 
   return {
     sent: input.recipients.length,
     includePromotion,
-    plan: user.plan
+    plan: user.plan,
+    queued: input.recipients.length > 1
   };
 }

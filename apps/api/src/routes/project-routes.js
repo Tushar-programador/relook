@@ -12,6 +12,7 @@ import {
   updateProjectSchema
 } from "../controllers/project-controller.js";
 import { requireAuth } from "../middlewares/auth-middleware.js";
+import { sendPortalLinkLimiter } from "../middlewares/rate-limit-middleware.js";
 import { requirePlan } from "../middlewares/require-plan-middleware.js";
 import { validate } from "../middlewares/validate-middleware.js";
 import { asyncHandler } from "../utils/async-handler.js";
@@ -27,7 +28,7 @@ router.get("/:id/analytics", asyncHandler(analytics));
 router.patch("/:id", validate(updateProjectSchema), asyncHandler(update));
 router.delete("/:id", asyncHandler(remove));
 router.post("/:id/regen-api-key", requirePlan("business"), asyncHandler(regenApiKey));
-router.post("/:id/send-portal-link", validate(sendPortalLinkSchema), asyncHandler(sendPortalLink));
+router.post("/:id/send-portal-link", sendPortalLinkLimiter, validate(sendPortalLinkSchema), asyncHandler(sendPortalLink));
 
 // Nested sub-routers (mergeParams handled in each sub-router)
 router.use("/:projectId/team", teamRouter);
