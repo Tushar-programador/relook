@@ -12,16 +12,6 @@ const navItems = [
     icon: LayoutDashboard
   },
   {
-    to: "/features",
-    label: "Features",
-    icon: Rocket
-  },
-  {
-    to: "/pricing",
-    label: "Pricing",
-    icon: CircleHelp
-  },
-  {
     to: "/send-portal-link",
     label: "Send Portal Link",
     icon: Mail
