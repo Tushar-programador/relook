@@ -33,6 +33,13 @@ export function AuthPage({ mode }) {
         navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, { replace: true });
       }
     } catch (err) {
+      const isUnverified =
+        err.message?.toLowerCase().includes("verify your email") ||
+        err.message?.toLowerCase().includes("email not verified");
+      if (mode === "login" && isUnverified) {
+        navigate(`/verify-email?email=${encodeURIComponent(form.email)}`, { replace: true });
+        return;
+      }
       setError(err.message);
     } finally {
       setSubmitting(false);

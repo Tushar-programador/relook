@@ -29,6 +29,21 @@ export const createProjectSchema = z.object({
     })
     .optional(),
   customCss: z.string().max(10000).optional()
+  ,
+  wallSettings: z
+    .object({
+      theme: z
+        .object({
+          primaryColor: z.string().optional(),
+          accentColor: z.string().optional(),
+          backgroundColor: z.string().optional(),
+          textColor: z.string().optional(),
+          pattern: z.enum(["dots", "grid", "lines"]).optional()
+        })
+        .optional(),
+      layout: z.record(z.string(), z.any()).optional()
+    })
+    .optional()
 });
 
 export const updateProjectSchema = createProjectSchema.partial();

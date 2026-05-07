@@ -56,6 +56,19 @@ const projectSchema = new mongoose.Schema(
       type: String,
       default: ""
     },
+    wallSettings: {
+      theme: {
+        primaryColor: { type: String, default: "#0f766e" },
+        accentColor: { type: String, default: "#f59e0b" },
+        backgroundColor: { type: String, default: "#f8fafc" },
+        textColor: { type: String, default: "#0f172a" },
+        pattern: { type: String, enum: ["dots", "grid", "lines"], default: "dots" }
+      },
+      layout: {
+        type: mongoose.Schema.Types.Mixed,
+        default: {}
+      }
+    },
     apiKey: {
       type: String,
       default: ""

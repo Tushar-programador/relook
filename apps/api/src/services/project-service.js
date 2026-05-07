@@ -181,6 +181,18 @@ export async function updateProject(userId, projectId, input) {
     project.customCss = input.customCss;
   }
 
+  if (input.wallSettings) {
+    project.wallSettings = {
+      ...(project.wallSettings || {}),
+      theme: {
+        ...(project.wallSettings?.theme || {}),
+        ...(input.wallSettings.theme || {})
+      },
+      layout: input.wallSettings.layout || project.wallSettings?.layout || {}
+    };
+    project.markModified("wallSettings");
+  }
+
   await project.save();
   return project;
 }

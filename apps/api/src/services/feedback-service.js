@@ -190,6 +190,7 @@ export async function getApprovedFeedback(projectSlug) {
     items,
     showBranding,
     customCss: project.customCss || "",
+    wallSettings: project.wallSettings || {},
     mediaDurationLimit
   };
 }

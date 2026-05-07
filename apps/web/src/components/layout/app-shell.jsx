@@ -1,9 +1,143 @@
 import { useEffect, useState } from "react";
-import { CircleHelp, LayoutDashboard, LogOut, Mail, Rocket, Sparkles, Trophy } from "lucide-react";
+import { CircleHelp, LayoutDashboard, LogOut, Mail, Rocket, Sparkles, Trophy, X, ShieldCheck } from "lucide-react";
 import { Link, NavLink } from "react-router-dom";
 import { useAuth } from "../../context/auth-context.jsx";
 import { api } from "../../lib/api";
 import { Button } from "../ui/button.jsx";
+import { Input } from "../ui/input.jsx";
+
+function EmailVerificationModal({ email, onClose, onVerified }) {
+  const { verifyEmail } = useAuth();
+  const [otp, setOtp] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  async function handleVerify(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await verifyEmail({ email, otp });
+      onVerified();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResend() {
+    setResending(true);
+    setError("");
+    setSuccess("");
+    try {
+      const data = await api.resendVerification({ email });
+      setSuccess(data.message || "Verification code resent to your inbox.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4" onClick={onClose}>
+      <div
+        className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-2xl bg-primary p-2 text-white">
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold">Verify your email</h2>
+              <p className="text-sm text-slate-500">Enter the 6-digit code sent to</p>
+              <p className="text-sm font-medium text-slate-700">{email}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="rounded-xl p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form className="mt-6 space-y-4" onSubmit={handleVerify}>
+          <Input
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            placeholder="6-digit OTP"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+            required
+          />
+
+          {error && <p className="text-sm text-rose-600">{error}</p>}
+          {success && <p className="text-sm text-emerald-700">{success}</p>}
+
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Verifying..." : "Verify email"}
+          </Button>
+        </form>
+
+        <div className="mt-4 flex items-center justify-between text-sm">
+          <button
+            type="button"
+            className="font-semibold text-primary hover:underline disabled:opacity-50"
+            onClick={handleResend}
+            disabled={resending}
+          >
+            {resending ? "Resending..." : "Resend code"}
+          </button>
+          <button type="button" className="text-slate-500 hover:underline" onClick={onClose}>
+            Do it later
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmailVerificationBanner({ email }) {
+  const [showModal, setShowModal] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const { user } = useAuth();
+
+  if (dismissed || user?.isEmailVerified) return null;
+
+  return (
+    <>
+      <div
+        className="flex w-full cursor-pointer items-center justify-between gap-3 bg-amber-500 px-4 py-2.5 text-white"
+        onClick={() => setShowModal(true)}
+      >
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Mail className="h-4 w-4 shrink-0" />
+          <span>
+            Please verify your email to create a portal. <span className="underline">Click here to verify.</span>
+          </span>
+        </div>
+        <button
+          className="shrink-0 rounded p-0.5 hover:bg-amber-400"
+          onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
+          aria-label="Dismiss"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+
+      {showModal && (
+        <EmailVerificationModal
+          email={email}
+          onClose={() => setShowModal(false)}
+          onVerified={() => setShowModal(false)}
+        />
+      )}
+    </>
+  );
+}
 
 const navItems = [
   {
@@ -50,7 +184,9 @@ export function AppShell({ children }) {
   }, []);
 
   return (
-    <div className="min-h-screen px-4 py-6 md:px-8">
+    <div className="min-h-screen">
+      {!user?.isEmailVerified && <EmailVerificationBanner email={user?.email} />}
+    <div className="px-4 py-6 md:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6 lg:flex-row">
         <aside className="glass app-grid rounded-[32px] border border-border/70 p-6 lg:w-80">
           <Link to="/" className="flex items-center gap-3 text-foreground no-underline">
@@ -119,6 +255,7 @@ export function AppShell({ children }) {
 
         <main className="flex-1">{children}</main>
       </div>
+    </div>
     </div>
   );
 }
