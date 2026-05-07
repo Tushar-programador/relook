@@ -3,11 +3,13 @@ import { ArrowRight, Plus } from "lucide-react";
 import { Link } from "react-router-dom";
 import { AppShell } from "../components/layout/app-shell.jsx";
 import { CreateProjectModal } from "../components/dashboard/create-project-modal.jsx";
+import { ProjectCard } from "../components/dashboard/project-card.jsx";
 import { StatsCard } from "../components/dashboard/stats-card.jsx";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardDescription, CardTitle } from "../components/ui/card.jsx";
 import { useAuth } from "../context/auth-context.jsx";
 import { api } from "../lib/api";
+import "driver.js/dist/driver.css";
 
 export function DashboardPage() {
   const { user } = useAuth();
@@ -31,6 +33,84 @@ export function DashboardPage() {
   useEffect(() => {
     loadProjects();
   }, []);
+
+  useEffect(() => {
+    if (!user?._id || loading) {
+      return;
+    }
+
+    const storageKey = `feedspace-tour-completed-${user._id}`;
+    const alreadyCompleted = localStorage.getItem(storageKey);
+    if (alreadyCompleted) {
+      return;
+    }
+
+    let cancelled = false;
+    const timerId = setTimeout(async () => {
+      if (cancelled) {
+        return;
+      }
+
+      const { driver } = await import("driver.js");
+      if (cancelled) {
+        return;
+      }
+
+      const tour = driver({
+        showProgress: true,
+        allowClose: true,
+        nextBtnText: "Next",
+        prevBtnText: "Back",
+        doneBtnText: "Done",
+        steps: [
+          {
+            popover: {
+              title: "Welcome to FeedSpace",
+              description: "Quick tour: create portals, review feedback, and publish social proof widgets."
+            }
+          },
+          {
+            element: "[data-tour='new-portal']",
+            popover: {
+              title: "Create your first portal",
+              description: "Start by creating a portal to collect text, audio, and video testimonials."
+            }
+          },
+          {
+            element: "[data-tour='stats-grid']",
+            popover: {
+              title: "Track your numbers",
+              description: "These cards show total feedback, visitors, and response performance."
+            }
+          },
+          {
+            element: "[data-tour='quick-actions']",
+            popover: {
+              title: "Quick actions",
+              description: "Jump to common tasks like viewing feedback, inviting team members, and reports."
+            }
+          },
+          {
+            element: "[data-tour='portals-list']",
+            popover: {
+              title: "Manage portals",
+              description: "Open any portal to moderate feedback, copy embeds, and customize widgets."
+            }
+          }
+        ],
+        onDestroyed: () => {
+          localStorage.setItem(storageKey, "1");
+        }
+      });
+
+      tour.drive();
+    }, 500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timerId);
+    };
+  }, [loading, user?._id]);
 
   async function handleCreated(form) {
     await api.createProject(form);
@@ -78,14 +158,14 @@ export function DashboardPage() {
             <h1 className="font-serif text-3xl font-semibold text-foreground">Dashboard</h1>
             <p className="mt-1 text-sm text-muted-foreground">Manage your portals, activity, and response performance.</p>
           </div>
-          <Button onClick={() => setShowModal(true)} className="md:self-start">
+          <Button onClick={() => setShowModal(true)} className="md:self-start" data-tour="new-portal">
             <span className="flex items-center gap-2">
               <Plus className="h-4 w-4" /> New portal
             </span>
           </Button>
         </div>
 
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4" data-tour="stats-grid">
           <StatsCard label="Total portals" value={totals.projects} accent="#0f766e" hint={`${totals.approved} approved reviews`} />
           <StatsCard label="Active visitors" value={totals.uniqueVisitors} accent="#0ea5e9" hint={`${totals.opens} total portal opens`} />
           <StatsCard label="Feedback received" value={totals.feedback} accent="#16a34a" hint="Across all active portals" />
@@ -121,7 +201,7 @@ export function DashboardPage() {
             </div>
           </Card>
 
-          <Card className="space-y-4">
+          <Card className="space-y-4" data-tour="quick-actions">
             <div>
               <CardTitle>Quick actions</CardTitle>
               <CardDescription className="mt-1">Manage your feedback collection</CardDescription>
@@ -215,7 +295,7 @@ export function DashboardPage() {
         )}
 
         {!loading && projects.length > 0 && (
-          <div className="grid gap-5 xl:grid-cols-2">
+          <div className="grid gap-5 xl:grid-cols-2" data-tour="portals-list">
             {projects.map((project) => <ProjectCard key={project._id} project={project} plan={currentPlan} />)}
           </div>
         )}
