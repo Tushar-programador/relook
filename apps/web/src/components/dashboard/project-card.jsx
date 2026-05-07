@@ -1,4 +1,4 @@
-import { ArrowRight, Copy, ExternalLink, MessageCircle } from "lucide-react";
+import { ArrowRight, Copy, ExternalLink, Eye, MessageCircle, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getEmbedCode } from "../../lib/utils";
@@ -14,6 +14,11 @@ export function ProjectCard({ project, plan = "free" }) {
     [isFreePlan]
   );
   const [embedLayout, setEmbedLayout] = useState(layoutOptions[0]);
+  const [showPreview, setShowPreview] = useState(false);
+
+  function getPreviewUrl() {
+    return `/widget/${project.slug}?layout=${encodeURIComponent(embedLayout)}`;
+  }
 
   async function copyEmbed() {
     await navigator.clipboard.writeText(getEmbedCode(project.slug, { layout: embedLayout }));
@@ -83,6 +88,10 @@ export function ProjectCard({ project, plan = "free" }) {
             <Copy className="h-3.5 w-3.5" />
             Copy embed
           </Button>
+          <Button variant="secondary" className="h-8 gap-2 px-3 text-xs" onClick={() => setShowPreview(true)}>
+            <Eye className="h-3.5 w-3.5" />
+            Preview
+          </Button>
         </div>
         <Button variant="secondary" asChild>
           <a href={`/feedback/${project.slug}`} target="_blank" rel="noreferrer">
@@ -106,6 +115,47 @@ export function ProjectCard({ project, plan = "free" }) {
         <p className="text-xs text-slate-500">Free plan includes <span className="font-semibold">simple</span> and <span className="font-semibold">carousel</span> embeds.</p>
       ) : (
         <p className="text-xs text-slate-500">Pro/Business unlocks showcase embeds: <span className="font-semibold">bubble</span> and <span className="font-semibold">post</span>.</p>
+      )}
+
+      {showPreview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4" onClick={() => setShowPreview(false)}>
+          <div className="w-full max-w-4xl rounded-3xl border border-border/70 bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Embed preview</p>
+                <p className="text-xs text-slate-500">Layout: {embedLayout}</p>
+              </div>
+              <Button variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowPreview(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="mb-3 flex flex-wrap gap-2">
+              {layoutOptions.map((layout) => (
+                <button
+                  key={layout}
+                  type="button"
+                  onClick={() => setEmbedLayout(layout)}
+                  className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                    embedLayout === layout
+                      ? "bg-slate-900 text-white"
+                      : "border border-border/60 bg-white text-slate-600 hover:bg-muted"
+                  }`}
+                >
+                  {layout}
+                </button>
+              ))}
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-slate-50">
+              <iframe
+                src={getPreviewUrl()}
+                title={`Embed preview ${project.slug}`}
+                className="h-[520px] w-full border-0"
+              />
+            </div>
+          </div>
+        </div>
       )}
     </Card>
   );

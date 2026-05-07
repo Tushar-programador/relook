@@ -1,5 +1,5 @@
-﻿import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bot, Brain, Copy, Download, ExternalLink, Key, RefreshCw, Search, Settings2, Share2, Sparkles, ThumbsUp, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Bot, Brain, Copy, Download, ExternalLink, Eye, Key, RefreshCw, Search, Settings2, Share2, Sparkles, ThumbsUp, Trash2, UserMinus, UserPlus, Users, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/layout/app-shell.jsx";
 import { Badge } from "../components/ui/badge.jsx";
@@ -92,6 +92,8 @@ export function ProjectPage() {
   // API key state
   const [apiKeyVisible, setApiKeyVisible] = useState(false);
   const [apiKeyRegen, setApiKeyRegen] = useState(false);
+  const [embedLayout, setEmbedLayout] = useState("simple");
+  const [showEmbedPreview, setShowEmbedPreview] = useState(false);
 
   const isMounted = useRef(true);
   const hasLoadedOnce = useRef(false);
@@ -173,7 +175,7 @@ export function ProjectPage() {
   async function copyEmbed(slug) {
     try {
       setActionError("");
-      await navigator.clipboard.writeText(getEmbedCode(slug));
+      await navigator.clipboard.writeText(getEmbedCode(slug, { layout: embedLayout }));
     } catch (err) {
       setActionError("Could not copy embed code. Please copy it manually.");
     }
@@ -280,6 +282,14 @@ export function ProjectPage() {
   const timeline = analytics?.timeline || [];
   const responders = analytics?.responders || [];
   const averageRating = metrics?.total ? (3 + (metrics.approved / Math.max(metrics.total, 1)) * 2).toFixed(1) : "0.0";
+  const embedLayoutOptions = useMemo(
+    () => (plan === "free" ? ["simple", "carousel"] : ["simple", "carousel", "bubble", "post"]),
+    [plan]
+  );
+
+  const embedPreviewUrl = project
+    ? `/widget/${project.slug}?layout=${encodeURIComponent(embedLayout)}`
+    : "";
 
   const statusLabelMap = {
     all: "All Feedback",
@@ -309,11 +319,23 @@ export function ProjectPage() {
 
             {project && (
               <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={embedLayout}
+                  onChange={(e) => setEmbedLayout(e.target.value)}
+                  className="h-8 rounded-lg border border-border/60 bg-white px-2 text-xs text-foreground outline-none"
+                >
+                  {embedLayoutOptions.map((layout) => (
+                    <option key={layout} value={layout}>{layout} embed</option>
+                  ))}
+                </select>
                 <Button variant="secondary" className="h-8 gap-1.5 px-3 text-xs" onClick={() => copyPublicLink(project.slug)}>
                   <Share2 className="h-3.5 w-3.5" /> Share
                 </Button>
                 <Button variant="secondary" className="h-8 gap-1.5 px-3 text-xs" onClick={() => copyEmbed(project.slug)}>
-                  <Settings2 className="h-3.5 w-3.5" /> Settings
+                  <Settings2 className="h-3.5 w-3.5" /> Copy embed
+                </Button>
+                <Button variant="secondary" className="h-8 gap-1.5 px-3 text-xs" onClick={() => setShowEmbedPreview(true)}>
+                  <Eye className="h-3.5 w-3.5" /> Preview
                 </Button>
                 <Button asChild className="h-8 gap-1.5 px-3 text-xs">
                   <a href={`/feedback/${project.slug}`} target="_blank" rel="noreferrer">
@@ -349,6 +371,43 @@ export function ProjectPage() {
             </div>
           )}
         </Card>
+
+        {showEmbedPreview && project && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4" onClick={() => setShowEmbedPreview(false)}>
+            <div className="w-full max-w-5xl rounded-3xl border border-border/70 bg-white p-4 shadow-2xl" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Live embed preview</p>
+                  <p className="text-xs text-slate-500">{project.name} · {embedLayout} layout</p>
+                </div>
+                <Button variant="ghost" className="h-8 w-8 p-0" onClick={() => setShowEmbedPreview(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mb-3 flex flex-wrap gap-2">
+                {embedLayoutOptions.map((layout) => (
+                  <button
+                    key={layout}
+                    type="button"
+                    onClick={() => setEmbedLayout(layout)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
+                      embedLayout === layout
+                        ? "bg-slate-900 text-white"
+                        : "border border-border/60 bg-white text-slate-600 hover:bg-muted"
+                    }`}
+                  >
+                    {layout}
+                  </button>
+                ))}
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-border/60 bg-slate-50">
+                <iframe src={embedPreviewUrl} title="Project embed preview" className="h-[560px] w-full border-0" />
+              </div>
+            </div>
+          </div>
+        )}
 
         <Card className="border border-border/70 bg-white/90 p-0 overflow-hidden">
           <div className="border-b border-border/60 px-4 py-3">
@@ -435,7 +494,7 @@ export function ProjectPage() {
                     )}
                     {item.type === "text" && item.mediaUrl && (
                       <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-medium text-primary underline-offset-4 hover:underline">
-                        View attached media ->
+                        View attached media -
                       </a>
                     )}
 
@@ -468,7 +527,7 @@ export function ProjectPage() {
                         rel="noreferrer"
                         className="rounded-lg border border-border/60 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-muted"
                       >
-                        Spotlight ->
+                        Spotlight -
                       </a>
                     )}
                     {isProOrAbove && item.mediaUrl && (item.type === "video" || item.type === "audio") && (
