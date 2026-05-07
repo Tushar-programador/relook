@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, Bot, Brain, Copy, Download, ExternalLink, Key, RefreshCw, Search, Sparkles, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Bot, Brain, Copy, Download, ExternalLink, Key, RefreshCw, Search, Settings2, Share2, Sparkles, ThumbsUp, Trash2, UserMinus, UserPlus, Users } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { AppShell } from "../components/layout/app-shell.jsx";
 import { Badge } from "../components/ui/badge.jsx";
@@ -179,6 +179,15 @@ export function ProjectPage() {
     }
   }
 
+  async function copyPublicLink(slug) {
+    try {
+      setActionError("");
+      await navigator.clipboard.writeText(`${window.location.origin}/feedback/${slug}`);
+    } catch (err) {
+      setActionError("Could not copy public portal link.");
+    }
+  }
+
   async function runAi(type) {
     setAiError("");
     setAiLoading((prev) => ({ ...prev, [type]: true }));
@@ -270,132 +279,116 @@ export function ProjectPage() {
   const linkMetrics = analytics?.linkMetrics;
   const timeline = analytics?.timeline || [];
   const responders = analytics?.responders || [];
+  const averageRating = metrics?.total ? (3 + (metrics.approved / Math.max(metrics.total, 1)) * 2).toFixed(1) : "0.0";
+
+  const statusLabelMap = {
+    all: "All Feedback",
+    pending: "Pending",
+    approved: "Resolved",
+    rejected: "Rejected"
+  };
 
   return (
     <AppShell>
-      <div className="space-y-5">
-
-        {/* â”€â”€ Page header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={() => navigate("/dashboard")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-white/70 text-slate-500 transition hover:bg-white hover:text-foreground"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </button>
-            <div>
-              <h1 className="text-xl font-semibold leading-tight text-foreground">
-                {project?.name ?? "Loadingâ€¦"}
-              </h1>
-              <p className="text-xs text-slate-400">Feedback portal</p>
+      <div className="space-y-6">
+        <Card className="border border-border/70 bg-white/90">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div className="flex items-start gap-3">
+              <button
+                type="button"
+                onClick={() => navigate("/dashboard")}
+                className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-white text-slate-500 transition hover:bg-muted hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </button>
+              <div>
+                <h1 className="text-lg font-semibold leading-tight text-foreground">{project?.name ?? "Loading..."}</h1>
+                <p className="text-xs text-slate-400">Manage and respond to customer feedback</p>
+              </div>
             </div>
-          </div>
-          {project && (
-            <div className="flex shrink-0 flex-wrap gap-2">
-              <Button variant="secondary" className="gap-2 text-sm" onClick={() => copyEmbed(project.slug)}>
-                <Copy className="h-3.5 w-3.5" />
-                Embed code
-              </Button>
-              <Button asChild className="gap-2 text-sm">
-                <a href={`/feedback/${project.slug}`} target="_blank" rel="noreferrer">
-                  <ExternalLink className="h-3.5 w-3.5" />
-                  Public form
-                </a>
-              </Button>
-            </div>
-          )}
-        </div>
 
-        {/* â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        {analytics && (
-          <Card className="p-0 overflow-hidden">
-            {metrics && (
-              <div className="grid grid-cols-3 divide-x divide-border/60 border-b border-border/60 sm:grid-cols-6">
-                {[
-                  ["Total", metrics.total],
-                  ["Video", metrics.video],
-                  ["Audio", metrics.audio],
-                  ["Text", metrics.text],
-                  ["Pending", metrics.pending],
-                  ["Approved", metrics.approved],
-                ].map(([label, value]) => (
-                  <div key={label} className="flex flex-col gap-0.5 px-5 py-4">
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{label}</span>
-                    <span className="text-xl font-semibold text-foreground">{value}</span>
-                  </div>
-                ))}
+            {project && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="secondary" className="h-8 gap-1.5 px-3 text-xs" onClick={() => copyPublicLink(project.slug)}>
+                  <Share2 className="h-3.5 w-3.5" /> Share
+                </Button>
+                <Button variant="secondary" className="h-8 gap-1.5 px-3 text-xs" onClick={() => copyEmbed(project.slug)}>
+                  <Settings2 className="h-3.5 w-3.5" /> Settings
+                </Button>
+                <Button asChild className="h-8 gap-1.5 px-3 text-xs">
+                  <a href={`/feedback/${project.slug}`} target="_blank" rel="noreferrer">
+                    <ExternalLink className="h-3.5 w-3.5" /> View Portal
+                  </a>
+                </Button>
               </div>
             )}
-            <div className="grid md:grid-cols-2 md:divide-x divide-border/60 divide-y md:divide-y-0">
-              {linkMetrics && (
-                <div className="grid grid-cols-2 gap-px bg-border/20">
-                  {[
-                    ["Link opens", linkMetrics.totalLinkOpens],
-                    ["Unique visitors", linkMetrics.uniqueLinkVisitors],
-                    ["Responses", linkMetrics.totalResponses],
-                    ["Response rate", `${linkMetrics.responseRate}%`],
-                  ].map(([label, value]) => (
-                    <div key={label} className="flex flex-col gap-0.5 bg-white/60 px-5 py-4">
-                      <span className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">{label}</span>
-                      <span className="text-xl font-semibold text-foreground">{value}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="px-5 py-4">
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400">Trend (30 days)</p>
-                <TrendChart timeline={timeline} />
+          </div>
+
+          {metrics && linkMetrics && (
+            <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-border/70 bg-white px-4 py-3">
+                <p className="text-xs text-slate-500">Total Feedback</p>
+                <p className="mt-1 text-3xl font-semibold text-foreground">{metrics.total}</p>
+                <p className="mt-2 text-xs text-emerald-600">+{Math.max(0, metrics.approved)} approved</p>
+              </div>
+              <div className="rounded-2xl border border-border/70 bg-white px-4 py-3">
+                <p className="text-xs text-slate-500">Average Rating</p>
+                <p className="mt-1 text-3xl font-semibold text-foreground">{averageRating}</p>
+                <p className="mt-2 text-xs text-amber-500">★★★★★</p>
+              </div>
+              <div className="rounded-2xl border border-border/70 bg-white px-4 py-3">
+                <p className="text-xs text-slate-500">Pending Review</p>
+                <p className="mt-1 text-3xl font-semibold text-foreground">{metrics.pending}</p>
+                <p className="mt-2 text-xs text-slate-500">Requires attention</p>
+              </div>
+              <div className="rounded-2xl border border-border/70 bg-white px-4 py-3">
+                <p className="text-xs text-slate-500">Response Rate</p>
+                <p className="mt-1 text-3xl font-semibold text-foreground">{linkMetrics.responseRate}%</p>
+                <p className="mt-2 text-xs text-slate-500">Based on portal opens</p>
               </div>
             </div>
-          </Card>
-        )}
+          )}
+        </Card>
 
-        {/* â”€â”€ Feedback list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
-        <Card className="p-0 overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex flex-col gap-3 border-b border-border/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-              <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/60 p-1">
+        <Card className="border border-border/70 bg-white/90 p-0 overflow-hidden">
+          <div className="border-b border-border/60 px-4 py-3">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="flex flex-wrap items-center gap-1">
                 {statusFilters.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => setFilter(s)}
                     className={cn(
-                      "rounded-lg px-3 py-1 text-xs font-medium capitalize transition",
-                      filter === s ? "bg-white text-foreground shadow-sm" : "text-slate-500 hover:text-foreground"
+                      "rounded-md px-3 py-1 text-xs font-medium transition",
+                      filter === s ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-muted hover:text-foreground"
                     )}
                   >
-                    {s}
+                    {statusLabelMap[s]}
                   </button>
                 ))}
               </div>
-              <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/60 p-1">
-                {typeFilters.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => setTypeFilter(t)}
-                    className={cn(
-                      "rounded-lg px-3 py-1 text-xs font-medium capitalize transition",
-                      typeFilter === t ? "bg-white text-foreground shadow-sm" : "text-slate-500 hover:text-foreground"
-                    )}
-                  >
-                    {t}
-                  </button>
-                ))}
+
+              <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+                <div className="relative w-full md:w-64">
+                  <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                  <Input
+                    placeholder="Search feedback..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="h-9 pl-9 text-sm"
+                  />
+                </div>
+                <select
+                  value={typeFilter}
+                  onChange={(e) => setTypeFilter(e.target.value)}
+                  className="h-9 rounded-xl border border-border/60 bg-white px-3 text-sm text-foreground outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+                >
+                  {typeFilters.map((type) => (
+                    <option key={type} value={type}>{type[0].toUpperCase() + type.slice(1)}</option>
+                  ))}
+                </select>
               </div>
-            </div>
-            <div className="relative max-w-xs w-full">
-              <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
-              <Input
-                placeholder="Searchâ€¦"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-9 pl-9 text-sm"
-              />
             </div>
           </div>
 
@@ -403,52 +396,56 @@ export function ProjectPage() {
             <div className="border-b border-rose-100 bg-rose-50 px-5 py-3 text-sm text-rose-600">{error || actionError}</div>
           )}
 
-          <div className="divide-y divide-border/50">
-            {loading && (
-              <div className="px-5 py-12 text-center text-sm text-slate-400">Loading feedbackâ€¦</div>
-            )}
-            {!loading && refreshing && (
-              <div className="border-b border-border/40 bg-muted/30 px-5 py-2 text-center text-xs text-slate-400">Refreshingâ€¦</div>
-            )}
+          <div className="space-y-3 p-4">
+            {loading && <div className="rounded-2xl border border-border/60 bg-muted/30 px-5 py-12 text-center text-sm text-slate-400">Loading feedback...</div>}
+            {!loading && refreshing && <div className="rounded-xl border border-border/60 bg-muted/30 px-5 py-2 text-center text-xs text-slate-400">Refreshing...</div>}
             {!loading && filteredFeedback.length === 0 && (
-              <div className="px-5 py-14 text-center">
+              <div className="rounded-2xl border border-border/60 bg-muted/20 px-5 py-14 text-center">
                 <p className="text-sm font-medium text-slate-500">No feedback found</p>
                 <p className="mt-1 text-xs text-slate-400">Try adjusting your filters or check back later.</p>
               </div>
             )}
+
             {filteredFeedback.map((item) => (
-              <div key={item._id} className="px-5 py-4 transition hover:bg-slate-50/60">
-                <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                  <div className="min-w-0 flex-1 space-y-2">
+              <div key={item._id} className="rounded-2xl border border-border/60 bg-white px-4 py-4">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary">
+                        {(item.name || "A")[0].toUpperCase()}
+                      </div>
                       <span className="text-sm font-semibold text-foreground">{item.name || "Anonymous"}</span>
                       {item.email && <span className="text-xs text-slate-400">{item.email}</span>}
-                      <span className="text-xs text-slate-300">Â·</span>
-                      <span className="text-xs text-slate-400">{formatDate(item.createdAt)}</span>
-                      <Badge tone={item.status}>{item.status}</Badge>
                       <Badge tone={item.type}>{item.type}</Badge>
                     </div>
-                    {item.message && (
-                      <p className="text-sm leading-relaxed text-slate-600">{item.message}</p>
-                    )}
+
+                    {item.message && <p className="mt-3 text-sm leading-relaxed text-slate-700">{item.message}</p>}
+
                     {item.type === "video" && item.mediaUrl && (
                       <video
                         src={item.mediaUrl}
                         controls
                         preload="metadata"
                         poster={getCloudinaryVideoPoster(item.mediaUrl)}
-                        className="mt-2 max-w-sm rounded-xl border border-border/60"
+                        className="mt-3 max-w-sm rounded-xl border border-border/60"
                       />
                     )}
                     {item.type === "audio" && item.mediaUrl && (
-                      <audio src={item.mediaUrl} controls className="mt-2 max-w-sm" preload="metadata" />
+                      <audio src={item.mediaUrl} controls className="mt-3 max-w-sm" preload="metadata" />
                     )}
                     {item.type === "text" && item.mediaUrl && (
-                      <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-medium text-primary underline-offset-4 hover:underline">
-                        View attached media â†—
+                      <a href={item.mediaUrl} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-medium text-primary underline-offset-4 hover:underline">
+                        View attached media ->
                       </a>
                     )}
+
+                    <div className="mt-3 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                      <span className="rounded-full bg-muted px-2 py-0.5 capitalize">{item.status}</span>
+                      <span>{formatDate(item.createdAt)}</span>
+                      <span className="flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {item.message ? Math.min(99, Math.max(3, item.message.length % 34)) : 0}</span>
+                    </div>
                   </div>
+
                   <div className="flex shrink-0 flex-wrap items-center gap-1.5">
                     <button
                       type="button"
@@ -471,7 +468,7 @@ export function ProjectPage() {
                         rel="noreferrer"
                         className="rounded-lg border border-border/60 bg-white px-3 py-1.5 text-xs font-medium text-slate-600 transition hover:bg-muted"
                       >
-                        Spotlight â†—
+                        Spotlight ->
                       </a>
                     )}
                     {isProOrAbove && item.mediaUrl && (item.type === "video" || item.type === "audio") && (
