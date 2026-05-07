@@ -6,9 +6,11 @@ import { CreateProjectModal } from "../components/dashboard/create-project-modal
 import { StatsCard } from "../components/dashboard/stats-card.jsx";
 import { Button } from "../components/ui/button.jsx";
 import { Card, CardDescription, CardTitle } from "../components/ui/card.jsx";
+import { useAuth } from "../context/auth-context.jsx";
 import { api } from "../lib/api";
 
 export function DashboardPage() {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -50,6 +52,7 @@ export function DashboardPage() {
   const responseRate = totals.opens > 0 ? Math.round((totals.feedback / totals.opens) * 100) : 0;
   const recentProjects = useMemo(() => projects.slice(0, 4), [projects]);
   const topProjects = useMemo(() => projects.slice(0, 3), [projects]);
+  const currentPlan = user?.plan || "free";
 
   function getPortalState(project) {
     if (!project.stats.totalFeedback) {
@@ -153,8 +156,8 @@ export function DashboardPage() {
           </div>
 
           <div className="grid gap-4 lg:grid-cols-3">
-            {!loading &&
-              topProjects.map((project) => {
+              {!loading &&
+                topProjects.map((project) => {
                 const rate = getResponseRate(project);
                 const state = getPortalState(project);
                 return (
@@ -209,6 +212,12 @@ export function DashboardPage() {
               </span>
             </Button>
           </Card>
+        )}
+
+        {!loading && projects.length > 0 && (
+          <div className="grid gap-5 xl:grid-cols-2">
+            {projects.map((project) => <ProjectCard key={project._id} project={project} plan={currentPlan} />)}
+          </div>
         )}
       </div>
 

@@ -1,15 +1,22 @@
 import { ArrowRight, Copy, ExternalLink, MessageCircle } from "lucide-react";
+import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { getEmbedCode } from "../../lib/utils";
 import { Card, CardDescription, CardTitle } from "../ui/card.jsx";
 import { Button } from "../ui/button.jsx";
 
-export function ProjectCard({ project }) {
+export function ProjectCard({ project, plan = "free" }) {
   const portalLink = `${window.location.origin}/feedback/${project.slug}`;
   const whatsappShareLink = `https://wa.me/?text=${encodeURIComponent(`Share your feedback here: ${portalLink}`)}`;
+  const isFreePlan = plan === "free";
+  const layoutOptions = useMemo(
+    () => (isFreePlan ? ["simple", "carousel"] : ["simple", "carousel", "bubble", "post"]),
+    [isFreePlan]
+  );
+  const [embedLayout, setEmbedLayout] = useState(layoutOptions[0]);
 
   async function copyEmbed() {
-    await navigator.clipboard.writeText(getEmbedCode(project.slug));
+    await navigator.clipboard.writeText(getEmbedCode(project.slug, { layout: embedLayout }));
   }
 
   async function copyPortalLink() {
@@ -60,10 +67,23 @@ export function ProjectCard({ project }) {
             Share on WhatsApp
           </a>
         </Button>
-        <Button variant="secondary" className="gap-2" onClick={copyEmbed}>
-          <Copy className="h-4 w-4" />
-          Copy widget embed
-        </Button>
+        <div className="flex items-center gap-2 rounded-2xl border border-border/60 bg-white/70 px-2 py-1.5">
+          <select
+            value={embedLayout}
+            onChange={(e) => setEmbedLayout(e.target.value)}
+            className="h-8 rounded-lg border border-border/60 bg-white px-2 text-xs text-foreground outline-none"
+          >
+            {layoutOptions.map((layout) => (
+              <option key={layout} value={layout}>
+                {layout} embed
+              </option>
+            ))}
+          </select>
+          <Button variant="secondary" className="h-8 gap-2 px-3 text-xs" onClick={copyEmbed}>
+            <Copy className="h-3.5 w-3.5" />
+            Copy embed
+          </Button>
+        </div>
         <Button variant="secondary" asChild>
           <a href={`/feedback/${project.slug}`} target="_blank" rel="noreferrer">
             Open portal webpage
@@ -81,6 +101,12 @@ export function ProjectCard({ project }) {
           </Link>
         </Button>
       </div>
+
+      {isFreePlan ? (
+        <p className="text-xs text-slate-500">Free plan includes <span className="font-semibold">simple</span> and <span className="font-semibold">carousel</span> embeds.</p>
+      ) : (
+        <p className="text-xs text-slate-500">Pro/Business unlocks showcase embeds: <span className="font-semibold">bubble</span> and <span className="font-semibold">post</span>.</p>
+      )}
     </Card>
   );
 }

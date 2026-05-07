@@ -13,6 +13,15 @@ export function formatDate(value) {
   }).format(new Date(value));
 }
 
-export function getEmbedCode(slug) {
-  return `<iframe src="${window.location.origin}/widget/${slug}" width="100%" height="480" style="border:0;border-radius:24px;overflow:hidden"></iframe>`;
+export function getEmbedCode(slug, options = {}) {
+  const layout = options.layout || "simple";
+  const heightByLayout = {
+    simple: 480,
+    carousel: 360,
+    bubble: 520,
+    post: 720
+  };
+  const height = options.height || heightByLayout[layout] || 480;
+  const src = `${window.location.origin}/widget/${slug}?layout=${encodeURIComponent(layout)}`;
+  return `<iframe src="${src}" width="100%" height="${height}" style="border:0;border-radius:24px;overflow:hidden"></iframe>`;
 }
