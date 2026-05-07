@@ -247,10 +247,6 @@ export function WallOfLovePage() {
     return () => el.remove();
   }, [data?.customCss]);
 
-  if (error) {
-    return <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-rose-600">{error}</div>;
-  }
-
   const items = data?.items || [];
   const loadedTheme = useMemo(() => {
     return {
@@ -260,10 +256,17 @@ export function WallOfLovePage() {
   }, [data?.wallSettings?.theme, data?.project?.wallSettings?.theme]);
 
   useEffect(() => {
+    if (editMode) {
+      return;
+    }
     setTheme(loadedTheme);
-  }, [loadedTheme]);
+  }, [loadedTheme, editMode]);
 
   useEffect(() => {
+    if (editMode) {
+      return;
+    }
+
     if (!items.length) {
       setLayout({});
       lastSavedSnapshot.current = serializeSettings(loadedTheme, {});
@@ -274,10 +277,10 @@ export function WallOfLovePage() {
     setLayout(nextLayout);
     lastSavedSnapshot.current = serializeSettings(loadedTheme, nextLayout);
     hasHydratedEditorState.current = true;
-  }, [items, data?.wallSettings?.layout, data?.project?.wallSettings?.layout, loadedTheme]);
+  }, [items, data?.wallSettings?.layout, data?.project?.wallSettings?.layout, loadedTheme, editMode]);
 
   async function saveWallSettings(options = {}) {
-    const { auto = false, refresh = false } = options;
+    const { auto = false } = options;
 
     if (auto && saving) {
       return;
@@ -291,16 +294,29 @@ export function WallOfLovePage() {
     setSaving(true);
     setSaveMessage("");
     try {
-      await api.updateProject(ownerProjectId, {
+      const updatedProject = await api.updateProject(ownerProjectId, {
         wallSettings: {
           theme,
           layout
         }
       });
-      if (refresh) {
-        const refreshed = await api.getPublicFeed(slug);
-        setData(refreshed);
-      }
+
+      setData((current) => {
+        if (!current) {
+          return current;
+        }
+
+        const nextWallSettings = updatedProject?.wallSettings || { theme, layout };
+        return {
+          ...current,
+          wallSettings: nextWallSettings,
+          project: {
+            ...current.project,
+            ...(updatedProject || {}),
+            wallSettings: nextWallSettings
+          }
+        };
+      });
 
       lastSavedSnapshot.current = serializeSettings(theme, layout);
       setSaveMessage(auto ? "Auto-saved" : "Layout saved successfully.");
@@ -336,6 +352,10 @@ export function WallOfLovePage() {
       ...current,
       [itemId]: nextLayout
     }));
+  }
+
+  if (error) {
+    return <div className="flex min-h-screen items-center justify-center px-4 text-center text-sm text-rose-600">{error}</div>;
   }
 
   return (
@@ -377,7 +397,7 @@ export function WallOfLovePage() {
                 <p className="mt-1 text-xs text-slate-500">Drag cards, resize from bottom-right corner, then save.</p>
               </div>
 
-              <Button onClick={() => saveWallSettings({ auto: false, refresh: true })} disabled={saving}>
+              <Button onClick={() => saveWallSettings({ auto: false })} disabled={saving}>
                 <span className="flex items-center gap-2">
                   {saving ? <Save className="h-4 w-4 animate-pulse" /> : <Check className="h-4 w-4" />}
                   {saving ? "Saving..." : "Save changes"}
