@@ -31,7 +31,17 @@ const envSchema = z.object({
   STRIPE_PRO_PRICE_ID: z.string().optional(),
   STRIPE_BUSINESS_PRICE_ID: z.string().optional(),
   SEND_PORTAL_LINK_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
-  SEND_PORTAL_LINK_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5)
+  SEND_PORTAL_LINK_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  LOGIN_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(900000),
+  LOGIN_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  REGISTER_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(3600000),
+  REGISTER_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+  OTP_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(300000),
+  OTP_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(5),
+  UPLOAD_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+  UPLOAD_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  AI_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
+  AI_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10)
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -79,4 +79,9 @@ const projectSchema = new mongoose.Schema(
   }
 );
 
+// Explicit compound and sort indexes for common query patterns
+projectSchema.index({ slug: 1 }, { unique: true });
+projectSchema.index({ userId: 1, createdAt: -1 });
+projectSchema.index({ createdAt: -1 });
+
 export const ProjectModel = mongoose.model("Project", projectSchema);

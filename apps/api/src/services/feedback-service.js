@@ -92,7 +92,6 @@ async function ensureProjectOwnership(userId, projectId) {
 
 export async function listFeedback(userId, projectId, filters) {
   const project = await ensureProjectOwnership(userId, projectId);
-  const page = filters.page || 1;
   const limit = Math.min(filters.limit || 20, 50);
   const query = { projectId: project._id };
 
@@ -104,6 +103,22 @@ export async function listFeedback(userId, projectId, filters) {
     query.type = filters.type;
   }
 
+  // Cursor-based pagination: use `cursor` (last seen _id) when provided,
+  // fall back to offset pagination for backwards compatibility.
+  if (filters.cursor) {
+    query._id = { $lt: filters.cursor };
+    const items = await FeedbackModel.find(query)
+      .sort({ _id: -1 })
+      .limit(limit)
+      .lean();
+
+    const nextCursor = items.length === limit ? String(items[items.length - 1]._id) : null;
+
+    return { items, nextCursor, pagination: null };
+  }
+
+  // Offset pagination (legacy)
+  const page = filters.page || 1;
   const [items, total] = await Promise.all([
     FeedbackModel.find(query)
       .sort({ createdAt: -1 })
@@ -115,6 +130,7 @@ export async function listFeedback(userId, projectId, filters) {
 
   return {
     items,
+    nextCursor: null,
     pagination: {
       page,
       limit,

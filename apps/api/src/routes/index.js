@@ -1,4 +1,5 @@
 import { Router } from "express";
+import mongoose from "mongoose";
 import { aiRouter } from "./ai-routes.js";
 import { authRouter } from "./auth-routes.js";
 import { billingRouter } from "./billing-routes.js";
@@ -16,9 +17,24 @@ const router = Router();
 router.get("/health", (_req, res) => {
   res.json({
     success: true,
-    data: {
-      status: "ok"
-    },
+    data: { status: "ok" },
+    error: null
+  });
+});
+
+router.get("/ready", (_req, res) => {
+  const dbState = mongoose.connection.readyState;
+  // 1 = connected
+  if (dbState !== 1) {
+    return res.status(503).json({
+      success: false,
+      data: { status: "unavailable", db: "disconnected" },
+      error: { message: "Database not ready" }
+    });
+  }
+  return res.json({
+    success: true,
+    data: { status: "ok", db: "connected" },
     error: null
   });
 });

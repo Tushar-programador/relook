@@ -4,6 +4,13 @@ import { WEBHOOK_EVENTS, WebhookModel } from "../models/webhook-model.js";
 import { ApiError } from "../utils/api-error.js";
 import { logger } from "../config/logger.js";
 
+// Retry delays in milliseconds: 1s, 5s, 30s, 5min
+const RETRY_DELAYS_MS = [1000, 5000, 30000, 300000];
+
+async function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function ensureProjectOwnership(userId, projectId) {
   const project = await ProjectModel.findOne({ _id: projectId, userId });
   if (!project) {
@@ -56,7 +63,7 @@ export async function testWebhook(userId, projectId, webhookId) {
     data: { message: "This is a test delivery from FeedSpace." }
   };
 
-  const result = await deliverWebhook(webhook, payload);
+  const result = await deliverWebhookWithRetry(webhook, payload);
   return result;
 }
 
@@ -69,10 +76,43 @@ export async function dispatchWebhookEvent(projectId, event, data) {
     const hooks = await WebhookModel.find({ projectId, events: event, isActive: true }).lean();
     const payload = { event, timestamp: new Date().toISOString(), data };
 
-    await Promise.allSettled(hooks.map((hook) => deliverWebhook(hook, payload)));
+    await Promise.allSettled(hooks.map((hook) => deliverWebhookWithRetry(hook, payload)));
   } catch (err) {
     logger.warn(`Webhook dispatch failed for event "${event}": ${err.message}`);
   }
+}
+
+/**
+ * Attempt delivery with exponential backoff retries.
+ * On permanent failure after all retries, logs to dead-letter warning.
+ */
+async function deliverWebhookWithRetry(webhook, payload) {
+  let lastResult;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt++) {
+    lastResult = await deliverWebhook(webhook, payload);
+
+    if (lastResult.delivered) {
+      if (attempt > 0) {
+        logger.info(`Webhook delivered to ${webhook.url} after ${attempt} retries`);
+      }
+      return lastResult;
+    }
+
+    if (attempt < RETRY_DELAYS_MS.length) {
+      const delay = RETRY_DELAYS_MS[attempt];
+      logger.warn(
+        `Webhook delivery attempt ${attempt + 1} failed for ${webhook.url}. Retrying in ${delay}ms...`
+      );
+      await sleep(delay);
+    }
+  }
+
+  // Dead-letter: all retries exhausted
+  logger.error(
+    `Webhook permanently failed after ${RETRY_DELAYS_MS.length + 1} attempts for ${webhook.url}. Last error: ${lastResult?.error}`
+  );
+  return lastResult;
 }
 
 async function deliverWebhook(webhook, payload) {
@@ -99,7 +139,14 @@ async function deliverWebhook(webhook, payload) {
     });
 
     clearTimeout(timeout);
-    return { delivered: true, status: response.status, url: webhook.url };
+
+    // Treat 2xx as success; anything else as a failure to be retried
+    if (response.ok) {
+      return { delivered: true, status: response.status, url: webhook.url };
+    }
+
+    logger.warn(`Webhook to ${webhook.url} returned HTTP ${response.status}`);
+    return { delivered: false, error: `HTTP ${response.status}`, url: webhook.url };
   } catch (err) {
     clearTimeout(timeout);
     logger.warn(`Webhook delivery failed to ${webhook.url}: ${err.message}`);

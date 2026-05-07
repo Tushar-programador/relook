@@ -50,5 +50,8 @@ const feedbackSchema = new mongoose.Schema(
 );
 
 feedbackSchema.index({ projectId: 1, status: 1 });
+feedbackSchema.index({ projectId: 1, type: 1 });
+feedbackSchema.index({ projectId: 1, createdAt: -1 });
+feedbackSchema.index({ createdAt: -1 });
 
 export const FeedbackModel = mongoose.model("Feedback", feedbackSchema);

@@ -66,6 +66,10 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+// Explicit index declarations (email unique index is also enforced by schema field)
+userSchema.index({ email: 1 }, { unique: true });
+userSchema.index({ createdAt: -1 });
+
 userSchema.set("toJSON", {
   transform: (_doc, ret) => {
     delete ret.passwordHash;

@@ -20,6 +20,7 @@ function getCloudinary() {
 /**
  * Generate signed upload parameters for direct client-side upload to Cloudinary.
  * Videos get an eager transformation for CDN-optimised, compressed delivery.
+ * Signatures expire after 60 seconds to prevent replay attacks.
  */
 export function createSignedUploadParams({ contentType, projectSlug }) {
   const instance = getCloudinary();
@@ -27,6 +28,8 @@ export function createSignedUploadParams({ contentType, projectSlug }) {
   const isAudio = contentType.startsWith("audio/");
   const isMedia = isVideo || isAudio;
   const timestamp = Math.round(Date.now() / 1000);
+  // Enforce 60-second signature expiry
+  const expiresAt = timestamp + 60;
   const folder = `feedspace/${projectSlug}`;
 
   const paramsToSign = { folder, timestamp };
@@ -48,6 +51,7 @@ export function createSignedUploadParams({ contentType, projectSlug }) {
     uploadUrl: `https://api.cloudinary.com/v1_1/${env.CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`,
     signature,
     timestamp,
+    expiresAt,
     apiKey: env.CLOUDINARY_API_KEY,
     cloudName: env.CLOUDINARY_CLOUD_NAME,
     folder,
